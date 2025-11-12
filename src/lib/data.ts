@@ -40,7 +40,7 @@ function convertTimestamps(data: any): any {
 
 const examplePackages: Package[] = [
     {
-        id: 'EXEMPLE1',
+        id: 'CM123456789FR',
         adminId: 'dummy-admin-id',
         sender: { name: 'Boutique de Gadgets', address: '123 Rue de l\'Innovation, 75002 Paris' },
         recipient: { name: 'Jean Dupont', address: '45 Avenue des Champs-Élysées, 75008 Paris' },
@@ -57,7 +57,7 @@ const examplePackages: Package[] = [
         createdAt: new Date('2023-10-25T18:00:00Z'),
     },
     {
-        id: 'EXEMPLE2',
+        id: 'CM987654321FR',
         adminId: 'dummy-admin-id',
         sender: { name: 'Librairie Le Savoir', address: '15 Rue de la Paix, 75001 Paris' },
         recipient: { name: 'Marie Curie', address: '22 Rue de la Liberté, 13001 Marseille' },
