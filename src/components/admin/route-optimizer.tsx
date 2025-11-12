@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { getOptimizedRouteAction } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ function SubmitButton() {
 }
 
 export function RouteOptimizer() {
-  const [state, formAction] = useFormState(getOptimizedRouteAction, initialState);
+  const [state, formAction] = useActionState(getOptimizedRouteAction, initialState);
 
   return (
     <>
