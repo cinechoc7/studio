@@ -1,0 +1,282 @@
+{
+  "entities": {
+    "Package": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Package",
+      "type": "object",
+      "description": "Represents a package being tracked.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Package entity."
+        },
+        "trackingCode": {
+          "type": "string",
+          "description": "The tracking code assigned to the package."
+        },
+        "currentStatusId": {
+          "type": "string",
+          "description": "Reference to PackageStatus. The current status of the package. (Relationship: Package 1:1 PackageStatus)"
+        },
+        "destination": {
+          "type": "string",
+          "description": "The final destination of the package."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to Customer. The customer who is receiving the package. (Relationship: Customer 1:N Package)"
+        },
+        "adminId": {
+          "type": "string",
+          "description": "Reference to Admin. The admin user managing this package. (Relationship: Admin 1:N Package)"
+        },
+        "deliveryRoutePlanId": {
+          "type": "string",
+          "description": "Reference to DeliveryRoutePlan. The planned delivery route for this package. (Relationship: Package 1:1 DeliveryRoutePlan)"
+        }
+      },
+      "required": [
+        "id",
+        "trackingCode",
+        "currentStatusId",
+        "destination",
+        "customerId",
+        "adminId"
+      ]
+    },
+    "PackageStatus": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PackageStatus",
+      "type": "object",
+      "description": "Represents the status of a package at a given time.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PackageStatus entity."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status description of the package (e.g., 'In Transit', 'Delivered')."
+        },
+        "location": {
+          "type": "string",
+          "description": "The current location of the package."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp of when the status was updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "location",
+        "timestamp"
+      ]
+    },
+    "Customer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Customer",
+      "type": "object",
+      "description": "Represents a customer who is receiving packages.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Customer entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the customer."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the customer.",
+          "format": "email"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The phone number of the customer."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "phoneNumber"
+      ]
+    },
+    "Admin": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Admin",
+      "type": "object",
+      "description": "Represents an administrator user who can manage packages.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Admin entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the admin user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the admin user.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email"
+      ]
+    },
+    "DeliveryRoutePlan": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DeliveryRoutePlan",
+      "type": "object",
+      "description": "Represents the planned delivery route for a package.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the DeliveryRoutePlan entity."
+        },
+        "origin": {
+          "type": "string",
+          "description": "The origin location of the delivery route."
+        },
+        "destination": {
+          "type": "string",
+          "description": "The destination location of the delivery route."
+        },
+        "steps": {
+          "type": "array",
+          "description": "The steps in the delivery route.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "estimatedTimeArrival": {
+          "type": "string",
+          "description": "The estimated time of arrival for the package.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "origin",
+        "destination",
+        "steps",
+        "estimatedTimeArrival"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/packages/{packageId}",
+        "definition": {
+          "entityName": "Package",
+          "schema": {
+            "$ref": "#/backend/entities/Package"
+          },
+          "description": "Stores package information, including the tracking code, destination, customer ID, admin ID (for authorization), and delivery route plan ID.",
+          "params": [
+            {
+              "name": "packageId",
+              "description": "Unique identifier for the package."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/package_statuses/{packageStatusId}",
+        "definition": {
+          "entityName": "PackageStatus",
+          "schema": {
+            "$ref": "#/backend/entities/PackageStatus"
+          },
+          "description": "Stores status updates for packages, including status, location, and timestamp.",
+          "params": [
+            {
+              "name": "packageStatusId",
+              "description": "Unique identifier for the package status."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/customers/{customerId}",
+        "definition": {
+          "entityName": "Customer",
+          "schema": {
+            "$ref": "#/backend/entities/Customer"
+          },
+          "description": "Stores customer information.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "Unique identifier for the customer."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admins/{adminId}",
+        "definition": {
+          "entityName": "Admin",
+          "schema": {
+            "$ref": "#/backend/entities/Admin"
+          },
+          "description": "Stores admin user information.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "Unique identifier for the admin user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/delivery_route_plans/{deliveryRoutePlanId}",
+        "definition": {
+          "entityName": "DeliveryRoutePlan",
+          "schema": {
+            "$ref": "#/backend/entities/DeliveryRoutePlan"
+          },
+          "description": "Stores delivery route plans.",
+          "params": [
+            {
+              "name": "deliveryRoutePlanId",
+              "description": "Unique identifier for the delivery route plan."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{uid}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/Admin"
+          },
+          "description": "A document's existence in this collection signifies admin role. Enables checking admin status via `exists()` in rules.",
+          "params": [
+            {
+              "name": "uid",
+              "description": "The Firebase Auth UID of the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the package tracking application with distinct user and admin interfaces. It emphasizes authorization independence and facilitates secure list operations. The design incorporates structural segregation, access modeling, and data clarity principles. Crucially, the structure allows tracking packages without user authentication, while providing a secure admin section to manage package details.\n\n*   **/packages/{packageId}**: Stores package information. Includes the `adminId` for ownership and authorization. This allows admins to manage packages assigned to them.\n*   **/package_statuses/{packageStatusId}**: Stores status updates for packages.\n*   **/customers/{customerId}**: Stores customer information.\n*   **/admins/{adminId}**: Stores admin user information. The existence of a document in this collection grants admin privileges.\n*   **/roles_admin/{uid}**: A document's existence in this collection signifies admin role. Using existence over content.\n\n**Authorization Independence and QAPs:**\n\n*   **Authorization Independence:** The `packages` collection contains the `adminId` field, which indicates the administrator responsible for a particular package. This denormalization enables security rules that directly check if the currently authenticated user (`request.auth.uid`) matches the `adminId` without needing to perform a `get()` request to another document. This ensures that authorization checks are atomic and efficient.\n*   **QAPs (Rules are not Filters):** The structure facilitates secure `list` operations. The use of the `/roles_admin/{uid}` collection allows secure listing of packages managed by an admin, or package statuses. The structure avoids filtering based on data content in the rules, maintaining the QAPs principle."
+  }
+}
