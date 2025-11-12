@@ -25,7 +25,7 @@ const initialState = {
 function SubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="w-full bg-accent hover:bg-accent/90">
+        <Button type="submit" disabled={pending} className="w-full bg-primary hover:bg-primary/90">
             {pending ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
             Mettre à jour
         </Button>

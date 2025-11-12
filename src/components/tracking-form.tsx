@@ -40,7 +40,7 @@ export function TrackingForm() {
                   <Input 
                     placeholder="Entrez votre numéro de suivi..." 
                     {...field} 
-                    className="h-14 pl-5 text-base text-gray-800"
+                    className="h-14 pl-5 text-base bg-input border-border"
                     aria-label="Code de suivi"
                   />
                 </div>
@@ -51,13 +51,13 @@ export function TrackingForm() {
         />
         <Button 
             type="submit" 
-            className="h-14 !w-auto px-6 bg-accent hover:bg-accent/90"
+            className="h-14 !w-auto px-6 bg-primary hover:bg-primary/90"
             size="lg"
             disabled={form.formState.isSubmitting}
             aria-label="Suivre"
         >
-          <span>Suivre</span>
-          {form.formState.isSubmitting ? <ArrowRight className="h-5 w-5 ml-2 animate-pulse" /> : <ArrowRight className="h-5 w-5 ml-2" />}
+          <span className="hidden sm:inline">Suivre</span>
+          {form.formState.isSubmitting ? <ArrowRight className="h-5 w-5 sm:ml-2 animate-pulse" /> : <ArrowRight className="h-5 w-5 sm:ml-2" />}
         </Button>
       </form>
     </Form>

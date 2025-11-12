@@ -4,25 +4,34 @@
 
 @layer base {
   :root {
-    --background: 0 0% 88%; /* #E0E0E0 */
-    --foreground: 235 62% 19%; /* Darker blue for text */
-    --card: 0 0% 100%;
-    --card-foreground: 235 62% 19%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 235 62% 19%;
-    --primary: 235 62% 29%; /* #1A237E */
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 95%;
-    --secondary-foreground: 235 62% 19%;
-    --muted: 0 0% 92%;
-    --muted-foreground: 235 22% 45%;
-    --accent: 14 100% 57%; /* #FF5722 */
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84.2% 60.2%;
+    --background: 235 62% 12%; /* Very dark blue */
+    --foreground: 0 0% 90%; /* Light gray for text */
+    
+    --card: 235 62% 16%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 235 62% 16%;
+    --popover-foreground: 0 0% 95%;
+    
+    --primary: 25 95% 53%; /* Bright Orange */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 235 62% 24%;
+    --secondary-foreground: 0 0% 95%;
+    
+    --muted: 235 62% 20%;
+    --muted-foreground: 0 0% 60%;
+    
+    --accent: 25 95% 53%; /* Bright Orange */
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 80%;
-    --input: 0 0% 100%;
-    --ring: 14 100% 57%;
+
+    --border: 235 62% 28%;
+    --input: 235 62% 22%;
+    --ring: 25 95% 58%;
+
     --radius: 0.5rem;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -31,14 +40,14 @@
     --chart-5: 340 75% 55%;
     
     /* Custom Sidebar Vars for Admin */
-    --sidebar-background: 235 62% 24%; /* Dark Blue */
-    --sidebar-foreground: 0 0% 88%; /* Light Gray */
-    --sidebar-border: 235 62% 34%;
-    --sidebar-accent: 14 100% 57%; /* Orange */
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-primary: 14 100% 57%;
-    --sidebar-primary-foreground:  0 0% 98%;
-    --sidebar-ring: 14 100% 57%;
+    --sidebar-background: 235 62% 12%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-border: 235 62% 22%;
+    --sidebar-accent: 25 95% 53%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-primary: 25 95% 53%;
+    --sidebar-primary-foreground:  0 0% 100%;
+    --sidebar-ring: 25 95% 58%;
   }
 
   .dark {

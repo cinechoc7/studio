@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useFormState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
+import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,7 +32,7 @@ const initialState = {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto bg-accent hover:bg-accent/90">
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto bg-primary hover:bg-primary/90">
       {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackagePlus className="mr-2 h-4 w-4" />}
       Créer le Colis
     </Button>
@@ -41,7 +41,7 @@ function SubmitButton() {
 
 export function AddPackageDialog() {
   const auth = useAuth();
-  const [state, formAction] = useFormState(createPackageAction, initialState);
+  const [state, formAction] = useActionState(createPackageAction, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -90,14 +90,14 @@ export function AddPackageDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button size="lg" className="bg-accent hover:bg-accent/90">
+        <Button size="lg" className="bg-primary hover:bg-primary/90">
           <PlusCircle className="mr-2 h-5 w-5" />
           Nouveau Colis
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl text-primary"> <PackagePlus /> Créer un nouveau colis</DialogTitle>
+          <DialogTitle className="flex items-center gap-2 text-2xl text-foreground"> <PackagePlus className="text-primary"/> Créer un nouveau colis</DialogTitle>
           <DialogDescription>
             Remplissez les informations ci-dessous pour enregistrer un nouveau colis et générer son code de suivi.
           </DialogDescription>
@@ -107,7 +107,7 @@ export function AddPackageDialog() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
             <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-primary"><Building className="text-accent"/>Informations de l'Expéditeur</h3>
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Building className="text-primary"/>Informations de l'Expéditeur</h3>
               <div className="space-y-2">
                 <Label htmlFor="senderName">Nom Complet</Label>
                 <Input id="senderName" name="senderName" placeholder="Ex: John Doe" defaultValue={lastSender?.name} required />
@@ -132,7 +132,7 @@ export function AddPackageDialog() {
 
             {/* Recipient Section */}
             <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-primary"><User className="text-accent"/>Informations du Destinataire</h3>
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><User className="text-primary"/>Informations du Destinataire</h3>
               <div className="space-y-2">
                 <Label htmlFor="recipientName">Nom Complet</Label>
                 <Input id="recipientName" name="recipientName" placeholder="Ex: Jane Smith" required />
@@ -160,7 +160,7 @@ export function AddPackageDialog() {
 
           {/* Itinerary Section */}
           <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
-             <h3 className="text-lg font-semibold flex items-center gap-2 text-primary"><MapPin className="text-accent"/>Itinéraire</h3>
+             <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><MapPin className="text-primary"/>Itinéraire</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="origin">Ville d'origine</Label>

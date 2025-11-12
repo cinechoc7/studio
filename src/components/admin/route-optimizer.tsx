@@ -19,7 +19,7 @@ const initialState = {
 function SubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+        <Button type="submit" disabled={pending} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
             {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Optimiser la Route
             <Sparkles className="ml-2 h-4 w-4" />
@@ -69,7 +69,7 @@ export function RouteOptimizer() {
       {state.data && (
         <CardContent>
           <div className="mt-6 border-t pt-6">
-            <h3 className="text-xl font-semibold mb-4 flex items-center"><Sparkles className="h-5 w-5 mr-2 text-accent"/>Résultat de l'optimisation</h3>
+            <h3 className="text-xl font-semibold mb-4 flex items-center"><Sparkles className="h-5 w-5 mr-2 text-primary"/>Résultat de l'optimisation</h3>
             <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
               <div>
                 <p className="font-semibold flex items-center"><Route className="mr-2 h-4 w-4"/> Route optimisée:</p>

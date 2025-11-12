@@ -59,14 +59,14 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
        <div className="absolute top-8 left-8">
-            <Link href="/" className="flex items-center gap-2 text-primary">
-                <Package className="w-6 h-6"/>
+            <Link href="/" className="flex items-center gap-2 text-foreground">
+                <Package className="w-6 h-6 text-primary"/>
                 <span className="text-xl font-bold">Colimove</span>
             </Link>
         </div>
-      <Card className="w-full max-w-sm shadow-2xl border-t-4 border-accent">
+      <Card className="w-full max-w-sm shadow-2xl border-t-4 border-primary">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-primary">Espace Administrateur</CardTitle>
+          <CardTitle className="text-3xl font-bold text-foreground">Espace Administrateur</CardTitle>
           <CardDescription>Entrez vos identifiants pour accéder au tableau de bord.</CardDescription>
         </CardHeader>
         <CardContent>

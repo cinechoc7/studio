@@ -38,13 +38,13 @@ export default function AdminDashboard() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-base font-bold text-primary">
+                        <CardTitle className="text-base font-bold text-foreground">
                             Total Colis
                         </CardTitle>
-                        <Package className="w-6 h-6 text-accent" />
+                        <Package className="w-6 h-6 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-extrabold text-primary">{totalPackages}</div>
+                        <div className="text-3xl font-extrabold text-foreground">{totalPackages}</div>
                         <p className="text-sm text-muted-foreground">
                             Nombre total de colis gérés
                         </p>
@@ -52,13 +52,13 @@ export default function AdminDashboard() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-base font-bold text-primary">
+                        <CardTitle className="text-base font-bold text-foreground">
                             En Transit
                         </CardTitle>
-                        <Truck className="w-6 h-6 text-accent" />
+                        <Truck className="w-6 h-6 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-extrabold text-primary">{inTransitPackages}</div>
+                        <div className="text-3xl font-extrabold text-foreground">{inTransitPackages}</div>
                          <p className="text-sm text-muted-foreground">
                             Colis actuellement en cours d'acheminement
                         </p>
@@ -66,11 +66,11 @@ export default function AdminDashboard() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                        <CardTitle className="text-base font-bold text-primary">Livrés</CardTitle>
-                        <CheckCircle className="w-6 h-6 text-accent" />
+                        <CardTitle className="text-base font-bold text-foreground">Livrés</CardTitle>
+                        <CheckCircle className="w-6 h-6 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-extrabold text-primary">{deliveredPackages}</div>
+                        <div className="text-3xl font-extrabold text-foreground">{deliveredPackages}</div>
                         <p className="text-sm text-muted-foreground">
                             Colis arrivés à destination
                         </p>
