@@ -53,7 +53,7 @@ export default function Home() {
             </Link>
              <Button asChild variant="outline" className="bg-transparent border-foreground/50 text-foreground hover:bg-foreground hover:text-background">
                 <Link href="/login">
-                  Espace Admin <ArrowRight className="w-4 h-4 ml-2" />
+                  Se connecter <ArrowRight className="w-4 h-4 ml-2" />
                 </Link>
             </Button>
           </div>
@@ -179,7 +179,7 @@ export default function Home() {
                         <ul className="space-y-2 text-muted-foreground">
                             <li><Link href="#" className="hover:text-primary">Accueil</Link></li>
                             <li><Link href="#features" className="hover:text-primary">Fonctionnalités</Link></li>
-                            <li><Link href="/login" className="hover:text-primary">Espace Admin</Link></li>
+                            <li><Link href="#testimonials" className="hover:text-primary">Témoignages</Link></li>
                         </ul>
                     </div>
                      <div>
