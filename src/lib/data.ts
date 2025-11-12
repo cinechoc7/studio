@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Package, PackageStatus, ContactInfo } from './types';
-import { useAuth, useFirestore, useCollection, initializeFirebase } from '@/firebase';
+import { useAuth, useFirestore, useCollection, initializeFirebase, useMemoFirebase } from '@/firebase';
 import {
   collection,
   doc,
@@ -41,10 +41,12 @@ function convertTimestamps(data: any): any {
 // Hook to get packages and subscribe to updates
 export function usePackages() {
     const firestore = useFirestore();
-    const packagesCollection = collection(firestore, 'packages');
-    const q = query(packagesCollection, orderBy('createdAt', 'desc'));
+    const packagesQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'packages'), orderBy('createdAt', 'desc'));
+    }, [firestore]);
     
-    const { data, isLoading, error } = useCollection<Omit<Package, 'statusHistory' | 'id'> & { statusHistory: any[] }>(q as any);
+    const { data, isLoading, error } = useCollection<Omit<Package, 'statusHistory' | 'id'> & { statusHistory: any[] }>(packagesQuery);
 
     const packages = useMemo(() => {
         if (!data) return [];
@@ -87,6 +89,9 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
         timestamp: new Date(),
     }];
 
+    // Generate a 6-character alphanumeric ID
+    const newId = Math.random().toString(36).substring(2, 8).toUpperCase();
+
     const newPackageData = {
         ...pkgData,
         adminId: adminId,
@@ -96,7 +101,8 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
     };
     
     try {
-        const docRef = await addDoc(packagesCollection, newPackageData);
+        const docRef = doc(firestore, 'packages', newId);
+        await addDoc(packagesCollection, newPackageData);
         window.dispatchEvent(packageUpdateEvent);
         return { id: docRef.id, ...pkgData, ...convertTimestamps(newPackageData)} as Package;
     } catch (error) {

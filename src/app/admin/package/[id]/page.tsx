@@ -1,5 +1,5 @@
 'use client';
-import { useFirestore } from "@/firebase";
+import { useFirestore, useMemoFirebase } from "@/firebase";
 import {
   Card,
   CardContent,
@@ -40,14 +40,19 @@ function convertTimestamps(data: any): any {
 
 export default function AdminPackagePage({ params }: AdminPackagePageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
-  const { id: packageId } = use(params);
+  const resolvedParams = use(params);
+  const packageId = resolvedParams.id;
   const firestore = useFirestore();
   
-  useEffect(() => {
-    if (!packageId || !firestore) return;
+  const packageRef = useMemoFirebase(() => {
+    if (!packageId || !firestore) return null;
+    return doc(firestore, 'packages', packageId);
+  }, [packageId, firestore]);
 
-    const docRef = doc(firestore, 'packages', packageId);
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+  useEffect(() => {
+    if (!packageRef) return;
+
+    const unsubscribe = onSnapshot(packageRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         const convertedData = convertTimestamps(data);
@@ -61,7 +66,7 @@ export default function AdminPackagePage({ params }: AdminPackagePageProps) {
     });
 
     return () => unsubscribe();
-  }, [packageId, firestore]);
+  }, [packageRef]);
 
 
   if (pkg === undefined) {
