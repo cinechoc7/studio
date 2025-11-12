@@ -81,7 +81,7 @@ export function usePackages() {
     
     const packagesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // Query packages where the adminId matches the current user's UID
+        // Query packages where the adminId matches the current user's UID and order them
         return query(collection(firestore, 'packages'), where("adminId", "==", user.uid));
     }, [firestore, user]);
     
@@ -89,11 +89,21 @@ export function usePackages() {
 
     const packages = useMemo(() => {
         if (!data) return [];
+        
+        const sortedData = [...data].sort((a, b) => {
+            const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : new Date(a.createdAt).getTime();
+            const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : new Date(b.createdAt).getTime();
+            return dateB - dateA;
+        });
+
+        const allPackages = sortedData.map(pkg => convertTimestamps(pkg) as Package);
+
         // If the database returns no packages, show the example packages.
-        if (data.length === 0) {
+        if (allPackages.length === 0) {
             return examplePackages;
         }
-        return data.map(pkg => convertTimestamps(pkg) as Package);
+
+        return allPackages;
     }, [data]);
     
     useEffect(() => {
@@ -132,7 +142,7 @@ export async function getPackageById(firestore: Firestore, id: string): Promise<
     }
 }
 
-export async function createPackage(firestore: Firestore, pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
+export async function createPackage(firestore: any, pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
     const statusHistory = [{
         status: 'Pris en charge',
         location: pkgData.origin,
@@ -141,7 +151,7 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
 
     // Generate a 6-character alphanumeric ID
     const newId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const docRef = doc(firestore, 'packages', newId);
+    const docRef = firestore.collection('packages').doc(newId);
 
 
     const newPackageData = {
@@ -149,12 +159,12 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
         adminId: adminId,
         currentStatus: 'Pris en charge',
         statusHistory: statusHistory,
-        createdAt: serverTimestamp()
+        createdAt: FieldValue.serverTimestamp()
     };
     
     try {
-        await setDoc(docRef, newPackageData);
-        const createdPackage = { id: newId, ...pkgData, ...newPackageData };
+        await docRef.set(newPackageData);
+        const createdPackage = { id: newId, ...pkgData, ...newPackageData, createdAt: new Date() };
         return convertTimestamps(createdPackage) as Package;
     } catch (error) {
         console.error("Error creating package:", error);
@@ -162,52 +172,11 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
     }
 }
 
-export async function updatePackageStatus(firestore: Firestore, id: string, newStatus: PackageStatus, location: string): Promise<Package | null> {
-    const docRef = doc(firestore, 'packages', id);
 
+export async function deletePackage(firestore: any, id: string): Promise<boolean> {
+    const docRef = firestore.collection("packages").doc(id);
     try {
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists) {
-            const examplePkg = examplePackages.find(p => p.id === id);
-            if (examplePkg) {
-                // This is a mocked update for the example package
-                console.warn("This is an example package. The status update will not be persisted.");
-                return examplePkg;
-            }
-             throw new Error("Package not found.");
-        }
-
-        const currentPackageData = docSnap.data();
-        
-        const currentPackageStatusHistory = Array.isArray(currentPackageData.statusHistory) ? currentPackageData.statusHistory : [];
-
-        const newStatusHistoryEntry = {
-            status: newStatus,
-            location,
-            timestamp: new Date(),
-        };
-
-        const updatedHistory = [newStatusHistoryEntry, ...currentPackageStatusHistory];
-
-        await updateDoc(docRef, {
-            currentStatus: newStatus,
-            statusHistory: updatedHistory,
-        });
-        
-        const updatedDoc = await getDoc(docRef);
-        return { id: updatedDoc.id, ...convertTimestamps(updatedDoc.data()) } as Package;
-
-    } catch (error) {
-        console.error("Error updating package status:", error);
-        throw error;
-    }
-}
-
-
-export async function deletePackage(firestore: Firestore, id: string): Promise<boolean> {
-    const docRef = doc(firestore, "packages", id);
-    try {
-        await deleteDoc(docRef);
+        await docRef.delete();
         return true;
     } catch (error) {
         console.error("Error deleting package:", error);
