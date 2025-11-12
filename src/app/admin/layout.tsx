@@ -1,10 +1,28 @@
+
+'use client';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, Map, PackageSearch } from "lucide-react";
+import { LayoutDashboard, Map, PackageSearch, LogOut } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/firebase";
+import { useRouter } from "next/navigation";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    try {
+      await auth.signOut();
+      // Remove the cookie
+      document.cookie = "firebaseIdToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      router.push('/login');
+    } catch (error) {
+      console.error("Error signing out: ", error);
+    }
+  };
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -36,8 +54,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarContent>
-        <div className="p-2 mt-auto">
-            <Button variant="ghost" className="w-full justify-start gap-2 p-2 h-auto text-left">
+        <div className="p-2 mt-auto flex flex-col gap-2">
+             <Button variant="ghost" className="w-full justify-start gap-2 p-2 h-auto text-left" onClick={handleSignOut}>
+                <LogOut className="h-5 w-5" />
+                <div className="text-sm font-semibold text-sidebar-foreground">
+                    Déconnexion
+                </div>
+            </Button>
+            <div className="flex items-center gap-2 p-2">
                 <Avatar className="h-9 w-9">
                     <AvatarImage src="https://i.pravatar.cc/150?u=admin" alt="Admin" />
                     <AvatarFallback>A</AvatarFallback>
@@ -46,7 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <p className="font-semibold text-sidebar-foreground">Admin</p>
                     <p className="text-xs text-sidebar-foreground/70">admin@colis-suivi.pro</p>
                 </div>
-            </Button>
+            </div>
         </div>
       </Sidebar>
       <SidebarInset>
