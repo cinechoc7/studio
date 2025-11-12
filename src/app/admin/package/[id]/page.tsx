@@ -1,5 +1,5 @@
 'use client';
-import { getPackageById } from "@/lib/data";
+import { getPackageById, useFirestore } from "@/lib/data";
 import {
   Card,
   CardContent,
@@ -13,36 +13,55 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { UpdateStatusForm } from "@/components/admin/update-status-form";
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import type { Package } from "@/lib/types";
 import { Separator } from "@/components/ui/separator";
+import { doc, onSnapshot } from "firebase/firestore";
 
 type AdminPackagePageProps = {
   params: { id: string };
 };
 
+function convertTimestamps(data: any): any {
+    if (data && typeof data.toDate === 'function') { // Firebase Timestamp
+        return data.toDate();
+    }
+    if (Array.isArray(data)) {
+        return data.map(convertTimestamps);
+    }
+    if (data !== null && typeof data === 'object') {
+        return Object.keys(data).reduce((acc, key) => {
+            acc[key] = convertTimestamps(data[key]);
+            return acc;
+        }, {} as any);
+    }
+    return data;
+}
+
 export default function AdminPackagePage({ params }: AdminPackagePageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
-  const packageId = params.id;
+  const packageId = use(params).id;
+  const firestore = useFirestore();
   
   useEffect(() => {
-    let isMounted = true;
-    async function fetchPackage() {
-        const packageData = await getPackageById(packageId);
-        if(isMounted) {
-            setPkg(packageData);
-        }
-    }
-    fetchPackage();
-    
-    const handleUpdate = () => fetchPackage();
-    window.addEventListener('packagesUpdated', handleUpdate);
+    if (!packageId || !firestore) return;
 
-    return () => {
-        isMounted = false;
-        window.removeEventListener('packagesUpdated', handleUpdate);
-    };
-  }, [packageId]);
+    const docRef = doc(firestore, 'packages', packageId);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const convertedData = convertTimestamps(data);
+        setPkg({ id: docSnap.id, ...convertedData } as Package);
+      } else {
+        setPkg(null);
+      }
+    }, (error) => {
+        console.error("Error fetching package in real-time:", error);
+        setPkg(null);
+    });
+
+    return () => unsubscribe();
+  }, [packageId, firestore]);
 
 
   if (pkg === undefined) {
@@ -107,14 +126,14 @@ export default function AdminPackagePage({ params }: AdminPackagePageProps) {
                                 <p className="text-muted-foreground">{pkg.sender.address}</p>
                             </div>
                         </div>
-                         <div className="flex items-center gap-3">
+                         {pkg.sender.email && <div className="flex items-center gap-3">
                             <Mail className="h-4 w-4 text-muted-foreground" />
                             <a href={`mailto:${pkg.sender.email}`} className="text-primary hover:underline">{pkg.sender.email}</a>
-                        </div>
-                         <div className="flex items-center gap-3">
+                        </div>}
+                         {pkg.sender.phone && <div className="flex items-center gap-3">
                             <Phone className="h-4 w-4 text-muted-foreground" />
                             <span>{pkg.sender.phone}</span>
-                        </div>
+                        </div>}
                     </CardContent>
                 </Card>
                  <Card>
@@ -129,14 +148,14 @@ export default function AdminPackagePage({ params }: AdminPackagePageProps) {
                                 <p className="text-muted-foreground">{pkg.recipient.address}</p>
                             </div>
                         </div>
-                         <div className="flex items-center gap-3">
+                         {pkg.recipient.email && <div className="flex items-center gap-3">
                             <Mail className="h-4 w-4 text-muted-foreground" />
                             <a href={`mailto:${pkg.recipient.email}`} className="text-primary hover:underline">{pkg.recipient.email}</a>
-                        </div>
-                         <div className="flex items-center gap-3">
+                        </div>}
+                         {pkg.recipient.phone && <div className="flex items-center gap-3">
                             <Phone className="h-4 w-4 text-muted-foreground" />
                             <span>{pkg.recipient.phone}</span>
-                        </div>
+                        </div>}
                     </CardContent>
                 </Card>
             </div>

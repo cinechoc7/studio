@@ -18,7 +18,7 @@ export default function AdminDashboard() {
     }
 
     const totalPackages = packages.length;
-    const inTransitPackages = packages.filter(p => p.currentStatus === 'En cours de livraison' || p.currentStatus === 'En cours de transit').length;
+    const inTransitPackages = packages.filter(p => p.currentStatus === 'En cours de livraison' || p.currentStatus === 'En cours d\'acheminement').length;
     const deliveredPackages = packages.filter(p => p.currentStatus === 'Livré').length;
 
     return (

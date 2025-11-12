@@ -1,6 +1,6 @@
 'use client';
 
-import { getPackageById } from "@/lib/data";
+import { useFirestore } from "@/lib/data";
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -10,22 +10,52 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useEffect, useState, use } from "react";
 import type { Package } from "@/lib/types";
+import { doc, onSnapshot } from 'firebase/firestore';
 
 type TrackingPageProps = {
   params: { id: string };
 };
 
+function convertTimestamps(data: any): any {
+    if (data && typeof data.toDate === 'function') { // Firebase Timestamp
+        return data.toDate();
+    }
+    if (Array.isArray(data)) {
+        return data.map(convertTimestamps);
+    }
+    if (data !== null && typeof data === 'object') {
+        return Object.keys(data).reduce((acc, key) => {
+            acc[key] = convertTimestamps(data[key]);
+            return acc;
+        }, {} as any);
+    }
+    return data;
+}
+
 export default function TrackingPage({ params }: TrackingPageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
-  const packageId = use(params).id;
+  const packageId = use(params).id.toUpperCase();
+  const firestore = useFirestore();
 
   useEffect(() => {
-    async function fetchPackage() {
-        const packageData = await getPackageById(packageId);
-        setPkg(packageData);
-    }
-    fetchPackage();
-  }, [packageId]);
+    if (!packageId || !firestore) return;
+
+    const docRef = doc(firestore, 'packages', packageId);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const convertedData = convertTimestamps(data);
+        setPkg({ id: docSnap.id, ...convertedData } as Package);
+      } else {
+        setPkg(null);
+      }
+      }, (error) => {
+        console.error("Error fetching package in real-time:", error);
+        setPkg(null);
+    });
+
+    return () => unsubscribe();
+  }, [packageId, firestore]);
 
 
   if (pkg === undefined) {
@@ -57,6 +87,9 @@ export default function TrackingPage({ params }: TrackingPageProps) {
   }
 
   const isDelivered = pkg.currentStatus === 'Livré';
+  const lastUpdate = pkg.statusHistory && pkg.statusHistory.length > 0
+    ? new Date(pkg.statusHistory[0].timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric'})
+    : 'N/A';
 
   return (
     <main className="min-h-screen w-full bg-gray-50 dark:bg-gray-950 py-12 sm:py-24">
@@ -105,7 +138,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
                             <Calendar className="h-5 w-5 mt-1 text-muted-foreground flex-shrink-0" />
                             <div>
                                 <p className="font-semibold text-foreground">Dernière mise à jour</p>
-                                <p className="text-muted-foreground">{new Date(pkg.statusHistory[0].timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric'})}</p>
+                                <p className="text-muted-foreground">{lastUpdate}</p>
                             </div>
                         </div>
                     </div>

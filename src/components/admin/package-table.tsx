@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { deletePackageAction } from "@/lib/actions";
+import { deletePackage as deletePackageAction } from "@/lib/data";
 import { useTransition } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,15 +34,25 @@ type PackageTableProps = {
   packages: Package[];
 };
 
-function DeletePackageDialog({ packageId, onDeleted }: { packageId: string, onDeleted: () => void }) {
+function DeletePackageDialog({ packageId }: { packageId: string }) {
     const [isPending, startTransition] = useTransition();
+    const { toast } = useToast();
     
     const handleDelete = () => {
         startTransition(async () => {
-            const formData = new FormData();
-            formData.append('packageId', packageId);
-            await deletePackageAction(formData);
-            onDeleted();
+            const success = await deletePackageAction(packageId);
+            if (success) {
+                toast({
+                    title: "Colis supprimé",
+                    description: "Le colis a été supprimé avec succès.",
+                });
+            } else {
+                 toast({
+                    title: "Erreur",
+                    description: "La suppression du colis a échoué.",
+                    variant: "destructive",
+                });
+            }
         });
     };
 
@@ -75,8 +85,7 @@ function DeletePackageDialog({ packageId, onDeleted }: { packageId: string, onDe
 
 export function PackageTable({ packages }: PackageTableProps) {
   const router = useRouter();
-  const { toast } = useToast();
-
+  
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'Livré':
@@ -97,14 +106,6 @@ export function PackageTable({ packages }: PackageTableProps) {
 
   const handleViewDetails = (id: string) => {
     router.push(`/admin/package/${id}`);
-  };
-
-  const onPackageDeleted = () => {
-    toast({
-        title: "Colis supprimé",
-        description: "Le colis a été supprimé avec succès.",
-    });
-    // The revalidation will refresh the package list
   };
   
   if (packages.length === 0) {
@@ -136,7 +137,7 @@ export function PackageTable({ packages }: PackageTableProps) {
                         <TableHead>Destinataire</TableHead>
                         <TableHead>Destination</TableHead>
                         <TableHead>Statut</TableHead>
-                        <TableHead className="hidden md:table-cell">Dernière MàJ</TableHead>
+                        <TableHead className="hidden md:table-cell">Créé le</TableHead>
                         <TableHead><span className="sr-only">Actions</span></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -149,7 +150,7 @@ export function PackageTable({ packages }: PackageTableProps) {
                             <TableCell>
                                 <Badge variant={getStatusVariant(pkg.currentStatus) as any}>{pkg.currentStatus}</Badge>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">{new Date(pkg.statusHistory[0].timestamp).toLocaleDateString('fr-FR')}</TableCell>
+                            <TableCell className="hidden md:table-cell">{new Date(pkg.createdAt as Date).toLocaleDateString('fr-FR')}</TableCell>
                             <TableCell className="text-right">
                                <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -164,7 +165,7 @@ export function PackageTable({ packages }: PackageTableProps) {
                                             Voir les détails
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DeletePackageDialog packageId={pkg.id} onDeleted={onPackageDeleted} />
+                                        <DeletePackageDialog packageId={pkg.id} />
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>

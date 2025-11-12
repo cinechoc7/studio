@@ -1,100 +1,154 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Package, PackageStatus, ContactInfo } from './types';
-import { useAuth } from '@/firebase';
-
-// This is a mock in-memory store.
-// In a real app, you would use a database like Firestore.
-let packages: Package[] = [];
+import { useAuth, useFirestore, useCollection } from '@/firebase';
+import {
+  collection,
+  doc,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+  query,
+  orderBy,
+  Timestamp,
+} from 'firebase/firestore';
 
 // Custom event dispatcher to notify about package updates
 const packageUpdateEvent = new Event('packagesUpdated');
 
-// Simulate API latency
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+function convertTimestamps(data: any): any {
+  if (data instanceof Timestamp) {
+    return data.toDate();
+  }
+  if (Array.isArray(data)) {
+    return data.map(convertTimestamps);
+  }
+  if (data !== null && typeof data === 'object') {
+    return Object.keys(data).reduce((acc, key) => {
+      acc[key] = convertTimestamps(data[key]);
+      return acc;
+    }, {} as any);
+  }
+  return data;
+}
+
 
 // Hook to get packages and subscribe to updates
 export function usePackages() {
-    const [packageData, setPackageData] = useState<{ packages: Package[], isLoading: boolean }>({ packages: [], isLoading: true });
+    const firestore = useFirestore();
+    const packagesCollection = collection(firestore, 'packages');
+    const q = query(packagesCollection, orderBy('createdAt', 'desc'));
+    
+    const { data, isLoading, error } = useCollection<Omit<Package, 'statusHistory' | 'id'> & { statusHistory: any[] }>(q as any);
 
+    const packages = useMemo(() => {
+        if (!data) return [];
+        return data.map(pkg => convertTimestamps(pkg) as Package);
+    }, [data]);
+    
     useEffect(() => {
-        const fetchPackages = async () => {
-            await delay(500); // simulate fetch latency
-            setPackageData({ packages: [...packages].sort((a, b) => new Date(b.statusHistory[0].timestamp).getTime() - new Date(a.statusHistory[0].timestamp).getTime()), isLoading: false });
-        };
+        if(error) {
+            console.error("Error fetching packages:", error);
+        }
+    }, [error]);
 
-        fetchPackages();
-
-        const handleUpdate = () => fetchPackages();
-        window.addEventListener('packagesUpdated', handleUpdate);
-
-        return () => {
-            window.removeEventListener('packagesUpdated', handleUpdate);
-        };
-    }, []);
-
-    return packageData;
+    return { packages, isLoading };
 }
 
 
 export async function getPackageById(id: string): Promise<Package | undefined> {
-  await delay(200);
-  return packages.find(p => p.id.toUpperCase() === id.toUpperCase());
+    const firestore = useFirestore();
+    const docRef = doc(firestore, "packages", id);
+    try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const convertedData = convertTimestamps(data);
+            return { id: docSnap.id, ...convertedData } as Package;
+        } else {
+            return undefined;
+        }
+    } catch (error) {
+        console.error("Error getting package by ID:", error);
+        return undefined;
+    }
 }
 
-export async function createPackage(pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId'>, adminId: string): Promise<Package> {
-    await delay(1000);
+export async function createPackage(pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
+    const firestore = useFirestore();
+    const packagesCollection = collection(firestore, 'packages');
     
-    // Generate a new tracking ID
-    const trackingId = `CS${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+    const statusHistory = [{
+        status: 'Pris en charge',
+        location: pkgData.origin,
+        timestamp: new Date(),
+    }];
 
-    const newPackage: Package = {
+    const newPackageData = {
         ...pkgData,
-        id: trackingId,
         adminId: adminId,
         currentStatus: 'Pris en charge',
-        statusHistory: [
-            {
-                status: 'Pris en charge',
-                location: pkgData.origin,
-                timestamp: new Date(),
-            }
-        ]
+        statusHistory: statusHistory,
+        createdAt: serverTimestamp()
     };
-    packages.unshift(newPackage); // Add to the beginning of the array
-    window.dispatchEvent(packageUpdateEvent); // Notify listeners
-    return newPackage;
+    
+    try {
+        const docRef = await addDoc(packagesCollection, newPackageData);
+        window.dispatchEvent(packageUpdateEvent);
+        return { id: docRef.id, ...pkgData, ...convertTimestamps(newPackageData)} as Package;
+    } catch (error) {
+        console.error("Error creating package:", error);
+        throw error;
+    }
 }
 
 export async function updatePackageStatus(id: string, newStatus: PackageStatus, location: string): Promise<Package | null> {
-  await delay(1000);
-  const packageIndex = packages.findIndex(p => p.id === id);
-  if (packageIndex === -1) {
-    return null;
-  }
+    const firestore = useFirestore();
+    const docRef = doc(firestore, 'packages', id);
+    
+    try {
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+            return null;
+        }
 
-  const updatedPackage = { ...packages[packageIndex] };
-  updatedPackage.currentStatus = newStatus;
-  updatedPackage.statusHistory.unshift({
-    status: newStatus,
-    location,
-    timestamp: new Date(),
-  });
+        const currentPackage = docSnap.data() as Package;
+        const newStatusHistory = {
+            status: newStatus,
+            location,
+            timestamp: new Date(),
+        };
 
-  packages[packageIndex] = updatedPackage;
-  window.dispatchEvent(packageUpdateEvent);
-  return updatedPackage;
+        const updatedHistory = [newStatusHistory, ...currentPackage.statusHistory];
+
+        await updateDoc(docRef, {
+            currentStatus: newStatus,
+            statusHistory: updatedHistory,
+        });
+
+        window.dispatchEvent(packageUpdateEvent);
+        const updatedDoc = await getDoc(docRef);
+        return { id: updatedDoc.id, ...convertTimestamps(updatedDoc.data()) } as Package;
+
+    } catch (error) {
+        console.error("Error updating package status:", error);
+        throw error;
+    }
 }
 
 export async function deletePackage(id: string): Promise<boolean> {
-    await delay(500);
-    const packageIndex = packages.findIndex(p => p.id === id);
-    if (packageIndex === -1) {
+    const firestore = useFirestore();
+    const docRef = doc(firestore, "packages", id);
+    try {
+        await deleteDoc(docRef);
+        window.dispatchEvent(packageUpdateEvent);
+        return true;
+    } catch (error) {
+        console.error("Error deleting package:", error);
         return false;
     }
-    
-    packages.splice(packageIndex, 1);
-    window.dispatchEvent(packageUpdateEvent);
-    return true;
 }

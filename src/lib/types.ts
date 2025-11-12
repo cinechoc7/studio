@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export const packageStatuses = [
   'Pris en charge',
   'En cours d\'acheminement',
@@ -14,7 +16,7 @@ export type PackageStatus = (typeof packageStatuses)[number];
 export type StatusHistory = {
   status: PackageStatus;
   location: string;
-  timestamp: Date;
+  timestamp: Date | Timestamp;
 };
 
 export type ContactInfo = {
@@ -33,4 +35,5 @@ export type Package = {
   destination: string;
   currentStatus: PackageStatus;
   statusHistory: StatusHistory[];
+  createdAt: Date | Timestamp;
 };

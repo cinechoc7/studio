@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { updatePackageStatus as dbUpdatePackageStatus, createPackage as dbCreatePackage, deletePackage as dbDeletePackage } from "./data";
-import type { PackageStatus, ContactInfo } from "./types";
+import type { PackageStatus } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
 import { auth } from "firebase-admin";
 import { getAuth } from "firebase/auth";
@@ -93,7 +93,7 @@ const contactSchema = z.object({
 });
 
 const createPackageSchema = z.object({
-  idToken: z.string(),
+  idToken: z.string().min(1, "Authentication token is missing."),
   senderName: contactSchema.shape.name,
   senderAddress: contactSchema.shape.address,
   senderEmail: contactSchema.shape.email,
@@ -138,14 +138,14 @@ export async function createPackageAction(prevState: any, formData: FormData) {
         } = packageData;
 
         const newPackageData = {
-            sender: { name: senderName, address: senderAddress, email: senderEmail, phone: senderPhone },
-            recipient: { name: recipientName, address: recipientAddress, email: recipientEmail, phone: recipientPhone },
+            sender: { name: senderName, address: senderAddress, email: senderEmail || undefined, phone: senderPhone || undefined },
+            recipient: { name: recipientName, address: recipientAddress, email: recipientEmail || undefined, phone: recipientPhone || undefined },
             origin,
             destination,
         };
 
         const newPackage = await dbCreatePackage(newPackageData, user.uid);
-
+        
         revalidatePath("/admin");
 
         return { message: `Colis ${newPackage.id} créé avec succès.`, success: true, errors: null };
@@ -157,34 +157,6 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             success: false,
             errors: null
         }
-    }
-}
-
-const deletePackageSchema = z.object({
-    packageId: z.string(),
-});
-
-export async function deletePackageAction(formData: FormData) {
-    try {
-        const validatedFields = deletePackageSchema.safeParse({
-            packageId: formData.get('packageId'),
-        });
-
-        if (!validatedFields.success) {
-            // This case should ideally not happen with form actions, but it's good practice.
-            console.error('Invalid form data for deletion:', validatedFields.error);
-            return;
-        }
-
-        const { packageId } = validatedFields.data;
-
-        await dbDeletePackage(packageId);
-
-        revalidatePath("/admin");
-
-    } catch (e) {
-        console.error('Server error during package deletion:', e);
-        // In a real app, you might want to return an error state to the UI
     }
 }
 
