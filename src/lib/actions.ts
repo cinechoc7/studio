@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createPackage as dbCreatePackage, deletePackage as dbDeletePackage } from "./data";
+import { deletePackage as dbDeletePackage } from "./data";
 import type { PackageStatus } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
 import { getApps, initializeApp } from 'firebase-admin/app';
@@ -16,6 +16,37 @@ if (!getApps().length) {
 const adminAuth = getAdminAuth();
 const firestore = getAdminFirestore();
 // --- END: Firebase Admin SDK Initialization ---
+
+async function dbCreatePackage(
+    firestore: any, // Using 'any' to accommodate Firebase Admin SDK
+    packageId: string,
+    pkgData: Omit<any, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>,
+    adminId: string
+): Promise<void> {
+
+    const docRef = firestore.collection('packages').doc(packageId);
+
+    const docSnap = await docRef.get();
+    if (docSnap.exists()) {
+        throw new Error(`Le colis avec le code "${packageId}" existe déjà.`);
+    }
+
+    const statusHistory = [{
+        status: 'Pris en charge',
+        location: pkgData.origin,
+        timestamp: FieldValue.serverTimestamp(), // Use Admin SDK's serverTimestamp
+    }];
+
+    const newPackageData = {
+        ...pkgData,
+        adminId: adminId,
+        currentStatus: 'Pris en charge' as PackageStatus,
+        statusHistory: statusHistory,
+        createdAt: FieldValue.serverTimestamp() // Use Admin SDK's serverTimestamp
+    };
+    
+    await docRef.set(newPackageData);
+}
 
 
 const updateStatusSchema = z.object({
@@ -142,9 +173,9 @@ export async function createPackageAction(prevState: any, formData: FormData) {
 
     } catch (e: any) {
         console.error("Server Action Error:", e);
-        if (e.message.includes('already exists')) {
+        if (e.message.includes('existe déjà')) {
              return {
-                message: `Le code de colis "${(Object.fromEntries(formData.entries())).packageId}" existe déjà.`,
+                message: e.message,
                 success: false,
                 errors: { packageId: [`Ce code de colis existe déjà.`] }
             }

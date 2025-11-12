@@ -148,33 +148,30 @@ export async function createPackage(
     packageId: string,
     pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>,
     adminId: string
-): Promise<Package> {
+): Promise<void> {
 
-    const docRef = firestore.collection('packages').doc(packageId);
+    const docRef = doc(firestore, 'packages', packageId);
 
-    const docSnap = await docRef.get();
+    const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-        throw new Error(`Package with ID ${packageId} already exists.`);
+        throw new Error(`Le colis avec le code "${packageId}" existe déjà.`);
     }
 
     const statusHistory = [{
         status: 'Pris en charge',
         location: pkgData.origin,
-        timestamp: new Date(),
+        timestamp: serverTimestamp(), // Use serverTimestamp for client-side
     }];
 
     const newPackageData = {
         ...pkgData,
         adminId: adminId,
         currentStatus: 'Pris en charge' as PackageStatus,
-        statusHistory: statusHistory.map(s => ({...s, timestamp: serverTimestamp()})),
-        createdAt: serverTimestamp()
+        statusHistory: statusHistory,
+        createdAt: serverTimestamp() // Use serverTimestamp for client-side
     };
     
-    await docRef.set(newPackageData);
-    
-    const createdPackage = { id: packageId, ...pkgData, ...newPackageData, createdAt: new Date() };
-    return convertTimestamps(createdPackage) as Package;
+    await setDoc(docRef, newPackageData);
 }
 
 
