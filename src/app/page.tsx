@@ -1,8 +1,9 @@
 
+
 import { TrackingForm } from '@/components/tracking-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, ShieldCheck, Zap, Package, ArrowRight, Star } from 'lucide-react';
+import { Search, ShieldCheck, Zap, Package, ArrowRight, Star, Plus } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -78,13 +79,34 @@ export default function Home() {
                     <TrackingForm />
                   </CardContent>
                 </Card>
-                <div className="flex items-center mt-4 text-sm text-muted-foreground">
-                    <Star className="w-4 h-4 mr-1 text-primary fill-primary" />
-                    <Star className="w-4 h-4 mr-1 text-primary fill-primary" />
-                    <Star className="w-4 h-4 mr-1 text-primary fill-primary" />
-                    <Star className="w-4 h-4 mr-1 text-primary fill-primary" />
-                    <Star className="w-4 h-4 mr-2 text-primary fill-primary" />
-                    Rejoignez des milliers d'utilisateurs satisfaits.
+                <div className="flex items-center mt-6 gap-4">
+                  <div className="flex -space-x-4 rtl:space-x-reverse">
+                      <Avatar className="w-10 h-10 border-2 border-background">
+                          <AvatarImage src="https://i.pravatar.cc/150?u=a" alt="User A" />
+                          <AvatarFallback>A</AvatarFallback>
+                      </Avatar>
+                       <Avatar className="w-10 h-10 border-2 border-background">
+                          <AvatarImage src="https://i.pravatar.cc/150?u=b" alt="User B" />
+                          <AvatarFallback>B</AvatarFallback>
+                      </Avatar>
+                       <Avatar className="w-10 h-10 border-2 border-background">
+                          <AvatarImage src="https://i.pravatar.cc/150?u=c" alt="User C" />
+                          <AvatarFallback>C</AvatarFallback>
+                      </Avatar>
+                      <Avatar className="w-10 h-10 border-2 border-background bg-muted text-muted-foreground flex items-center justify-center">
+                         <AvatarFallback className="bg-transparent">
+                            <Plus className="h-5 w-5"/>
+                         </AvatarFallback>
+                      </Avatar>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                      <div className="flex text-primary">
+                          {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`h-4 w-4 fill-current`} />
+                          ))}
+                      </div>
+                       <p>Rejoignez des milliers d'utilisateurs satisfaits.</p>
+                  </div>
                 </div>
               </div>
             </div>
