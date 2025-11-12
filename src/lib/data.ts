@@ -46,7 +46,7 @@ export function usePackages() {
     
     const packagesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // Query packages where the adminId matches the current user's UID
+        // Query packages where the adminId matches the current user's UID and order by creation date
         return query(collection(firestore, 'packages'), where("adminId", "==", user.uid), orderBy('createdAt', 'desc'));
     }, [firestore, user]);
     
