@@ -50,7 +50,8 @@ export function AddPackageDialog() {
         variant: state.success ? 'default' : 'destructive',
       });
       if (state.success) {
-        formRef.current?.reset();
+        // We no longer reset the form automatically
+        // formRef.current?.reset();
         closeButtonRef.current?.click();
       }
     }
@@ -88,13 +89,13 @@ export function AddPackageDialog() {
                 {state.errors?.senderAddress && <p className="text-sm text-destructive">{state.errors.senderAddress}</p>}
               </div>
                <div className="space-y-2">
-                <Label htmlFor="senderEmail">Email</Label>
-                <Input id="senderEmail" name="senderEmail" type="email" placeholder="Ex: expediteur@email.com" required />
+                <Label htmlFor="senderEmail">Email (Optionnel)</Label>
+                <Input id="senderEmail" name="senderEmail" type="email" placeholder="Ex: expediteur@email.com" />
                 {state.errors?.senderEmail && <p className="text-sm text-destructive">{state.errors.senderEmail}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="senderPhone">Téléphone</Label>
-                <Input id="senderPhone" name="senderPhone" type="tel" placeholder="Ex: 0123456789" required />
+                <Label htmlFor="senderPhone">Téléphone (Optionnel)</Label>
+                <Input id="senderPhone" name="senderPhone" type="tel" placeholder="Ex: 0123456789" />
                 {state.errors?.senderPhone && <p className="text-sm text-destructive">{state.errors.senderPhone}</p>}
               </div>
             </div>
@@ -113,13 +114,13 @@ export function AddPackageDialog() {
                 {state.errors?.recipientAddress && <p className="text-sm text-destructive">{state.errors.recipientAddress}</p>}
               </div>
                <div className="space-y-2">
-                <Label htmlFor="recipientEmail">Email</Label>
-                <Input id="recipientEmail" name="recipientEmail" type="email" placeholder="Ex: destinataire@email.com" required />
+                <Label htmlFor="recipientEmail">Email (Optionnel)</Label>
+                <Input id="recipientEmail" name="recipientEmail" type="email" placeholder="Ex: destinataire@email.com" />
                 {state.errors?.recipientEmail && <p className="text-sm text-destructive">{state.errors.recipientEmail}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="recipientPhone">Téléphone</Label>
-                <Input id="recipientPhone" name="recipientPhone" type="tel" placeholder="Ex: 0612345678" required />
+                <Label htmlFor="recipientPhone">Téléphone (Optionnel)</Label>
+                <Input id="recipientPhone" name="recipientPhone" type="tel" placeholder="Ex: 0612345678" />
                 {state.errors?.recipientPhone && <p className="text-sm text-destructive">{state.errors.recipientPhone}</p>}
               </div>
             </div>

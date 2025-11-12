@@ -20,12 +20,13 @@ export type StatusHistory = {
 export type ContactInfo = {
     name: string;
     address: string;
-    email: string;
-    phone: string;
+    email?: string;
+    phone?: string;
 }
 
 export type Package = {
   id: string; // Tracking code
+  adminId: string;
   sender: ContactInfo;
   recipient: ContactInfo;
   origin: string;

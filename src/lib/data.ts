@@ -43,7 +43,7 @@ export async function getPackageById(id: string): Promise<Package | undefined> {
   return packages.find(p => p.id.toUpperCase() === id.toUpperCase());
 }
 
-export async function createPackage(pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory'>): Promise<Package> {
+export async function createPackage(pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId'>, adminId: string): Promise<Package> {
     await delay(1000);
     
     // Generate a new tracking ID
@@ -52,6 +52,7 @@ export async function createPackage(pkgData: Omit<Package, 'id' | 'currentStatus
     const newPackage: Package = {
         ...pkgData,
         id: trackingId,
+        adminId: adminId,
         currentStatus: 'Pris en charge',
         statusHistory: [
             {

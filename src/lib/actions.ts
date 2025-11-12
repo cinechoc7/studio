@@ -5,6 +5,50 @@ import { z } from "zod";
 import { updatePackageStatus as dbUpdatePackageStatus, createPackage as dbCreatePackage, deletePackage as dbDeletePackage } from "./data";
 import type { PackageStatus, ContactInfo } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
+import { auth } from "firebase-admin";
+import { getAuth } from "firebase/auth";
+import { headers } from "next/headers";
+import { FirebaseError } from "firebase/app";
+import { firebaseConfig } from "@/firebase/config";
+import { initializeApp, getApps } from 'firebase/app';
+import { DecodedIdToken } from "firebase-admin/auth";
+
+// Helper to get admin SDK
+async function getAdminAuth() {
+  const { cert } = await import('firebase-admin/app');
+  const { getAuth: getAdminAuth } = await import('firebase-admin/auth');
+  const admin = await import('firebase-admin');
+
+  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!serviceAccount) {
+    throw new Error('Missing FIREBASE_SERVICE_ACCOUNT for admin operations.');
+  }
+
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: cert(JSON.parse(serviceAccount)),
+    });
+  }
+  return getAdminAuth();
+}
+
+
+// Helper to get current user on server
+async function getCurrentUser(): Promise<DecodedIdToken | null> {
+  const authorization = headers().get("Authorization");
+  if (authorization?.startsWith("Bearer ")) {
+    const idToken = authorization.split("Bearer ")[1];
+    try {
+        const adminAuth = await getAdminAuth();
+        const decodedToken = await adminAuth.verifyIdToken(idToken);
+        return decodedToken;
+    } catch (error) {
+        console.error("Error verifying token:", error);
+        return null;
+    }
+  }
+  return null;
+}
 
 const updateStatusSchema = z.object({
   packageId: z.string(),
@@ -45,8 +89,8 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
 const contactSchema = z.object({
     name: z.string().min(2, "Le nom est requis."),
     address: z.string().min(5, "L'adresse est requise."),
-    email: z.string().email("L'email est invalide."),
-    phone: z.string().min(10, "Le téléphone est requis."),
+    email: z.string().email("L'email est invalide.").optional().or(z.literal('')),
+    phone: z.string().min(10, "Le téléphone est requis.").optional().or(z.literal('')),
 });
 
 const createPackageSchema = z.object({
@@ -63,6 +107,20 @@ const createPackageSchema = z.object({
 });
 
 export async function createPackageAction(prevState: any, formData: FormData) {
+    
+    if (!getApps().length) {
+        initializeApp(firebaseConfig);
+    }
+    const user = getAuth().currentUser;
+
+    if (!user) {
+        return {
+            message: 'Utilisateur non authentifié.',
+            success: false,
+            errors: null
+        }
+    }
+    
     try {
         const validatedFields = createPackageSchema.safeParse(Object.fromEntries(formData.entries()));
 
@@ -87,7 +145,7 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             destination,
         };
 
-        const newPackage = await dbCreatePackage(newPackageData);
+        const newPackage = await dbCreatePackage(newPackageData, user.uid);
 
         revalidatePath("/admin");
 
