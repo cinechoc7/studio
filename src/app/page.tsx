@@ -51,11 +51,6 @@ export default function Home() {
               <Package className="w-8 h-8 text-primary" />
               <span className="text-2xl font-bold text-foreground">Colimove</span>
             </Link>
-             <Button asChild variant="outline" className="bg-transparent border-foreground/50 text-foreground hover:bg-foreground hover:text-background">
-                <Link href="/login">
-                  Se connecter <ArrowRight className="w-4 h-4 ml-2" />
-                </Link>
-            </Button>
           </div>
       </header>
 
