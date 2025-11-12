@@ -1,5 +1,7 @@
 'use client';
 import { getAuth, type User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 
 type SecurityRuleContext = {
   path: string;
@@ -9,14 +11,15 @@ type SecurityRuleContext = {
 
 interface FirebaseAuthToken {
   name: string | null;
+  picture?: string | null;
   email: string | null;
   email_verified: boolean;
   phone_number: string | null;
   sub: string;
   firebase: {
-    identities: Record<string, string[]>;
+    identities: Record<string, any>;
     sign_in_provider: string;
-    tenant: string | null;
+    tenant?: string | null;
   };
 }
 
@@ -39,25 +42,24 @@ interface SecurityRuleRequest {
  * @param currentUser The currently authenticated Firebase user.
  * @returns An object that mirrors request.auth in security rules, or null.
  */
-function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
+async function buildAuthObject(currentUser: User | null): Promise<FirebaseAuthObject | null> {
   if (!currentUser) {
     return null;
   }
+  
+  const tokenResult = await currentUser.getIdTokenResult();
 
   const token: FirebaseAuthToken = {
     name: currentUser.displayName,
+    picture: currentUser.photoURL,
     email: currentUser.email,
     email_verified: currentUser.emailVerified,
     phone_number: currentUser.phoneNumber,
     sub: currentUser.uid,
+    ...tokenResult.claims,
     firebase: {
-      identities: currentUser.providerData.reduce((acc, p) => {
-        if (p.providerId) {
-          acc[p.providerId] = [p.uid];
-        }
-        return acc;
-      }, {} as Record<string, string[]>),
-      sign_in_provider: currentUser.providerData[0]?.providerId || 'custom',
+      identities: tokenResult.claims.firebase?.identities ?? {},
+      sign_in_provider: tokenResult.claims.firebase?.sign_in_provider ?? 'custom',
       tenant: currentUser.tenantId,
     },
   };
@@ -74,18 +76,16 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
  * @param context The context of the failed Firestore operation.
  * @returns A structured request object.
  */
-function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
+async function buildRequestObject(context: SecurityRuleContext): Promise<SecurityRuleRequest> {
   let authObject: FirebaseAuthObject | null = null;
   try {
-    // Safely attempt to get the current user.
     const firebaseAuth = getAuth();
     const currentUser = firebaseAuth.currentUser;
     if (currentUser) {
-      authObject = buildAuthObject(currentUser);
+      authObject = await buildAuthObject(currentUser);
     }
   } catch {
-    // This will catch errors if the Firebase app is not yet initialized.
-    // In this case, we'll proceed without auth information.
+    // Fails if Firebase app not initialized, proceed without auth info.
   }
 
   return {
@@ -112,12 +112,29 @@ ${JSON.stringify(requestObject, null, 2)}`;
  * available in Firestore Security Rules.
  */
 export class FirestorePermissionError extends Error {
-  public readonly request: SecurityRuleRequest;
+  public readonly request: SecurityRuleRequest | null = null;
 
-  constructor(context: SecurityRuleContext) {
-    const requestObject = buildRequestObject(context);
-    super(buildErrorMessage(requestObject));
-    this.name = 'FirebaseError';
-    this.request = requestObject;
+  constructor(context: SecurityRuleContext, serverError?: Error) {
+    // Default message in case async operations fail
+    super(serverError?.message || 'Firestore permission error occurred.');
+    this.name = 'FirebaseError'; // To match Firebase's error naming
   }
+  
+  /**
+   * Asynchronously initializes the error with full context.
+   * This should be called and awaited right after instantiating the error.
+   */
+  async initialize() {
+    try {
+      const requestObject = await buildRequestObject(this.context);
+      this.request = requestObject;
+      this.message = buildErrorMessage(requestObject);
+    } catch (e) {
+       console.error("Failed to build detailed permission error:", e);
+       // The message will fall back to the one set in the constructor
+    }
+  }
+  
+  // Store context privately to use in async initialization
+  private context: SecurityRuleContext;
 }

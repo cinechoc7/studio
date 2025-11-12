@@ -6,7 +6,7 @@ import { updatePackageStatus as dbUpdatePackageStatus, createPackage as dbCreate
 import type { PackageStatus } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
 import { getApps, initializeApp } from 'firebase/app';
-import { getFirestore as getClientFirestore } from 'firestore.rules';
+import { getFirestore as getClientFirestore } from 'firebase/firestore';
 import { firebaseConfig } from "@/firebase/config";
 import type { DecodedIdToken } from "firebase-admin/auth";
 
@@ -46,9 +46,11 @@ async function getCurrentUser(idToken: string): Promise<DecodedIdToken | null> {
     const adminAuth = await getAdminAuth();
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     
-    // Check if user is an admin
-    const adminDoc = await getFirestore().collection('admins').doc(decodedToken.uid).get();
-    if (!adminDoc.exists) {
+    const firestore = getFirestore();
+    const adminDocRef = doc(firestore, 'admins', decodedToken.uid);
+    const adminDoc = await getDoc(adminDocRef);
+
+    if (!adminDoc.exists()) {
         console.warn(`User ${decodedToken.uid} is not an admin.`);
         return null;
     }
