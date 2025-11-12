@@ -113,23 +113,20 @@ ${JSON.stringify(requestObject, null, 2)}`;
  */
 export class FirestorePermissionError extends Error {
   public request: SecurityRuleRequest | null = null;
-  // Store context privately to use in async initialization
-  private context: SecurityRuleContext;
 
   constructor(context: SecurityRuleContext, serverError?: Error) {
-    // Default message in case async operations fail
+    // This initial message is a fallback. The async init will set the detailed one.
     super(serverError?.message || 'Firestore permission error occurred.');
-    this.name = 'FirebaseError'; // To match Firebase's error naming
-    this.context = context; // Store context immediately
+    this.name = 'FirebaseError';
   }
   
   /**
    * Asynchronously initializes the error with full context.
-   * This should be called and awaited right after instantiating the error.
+   * This MUST be called and awaited right after instantiating the error.
    */
-  async initialize() {
+  async initialize(context: SecurityRuleContext) {
     try {
-      const requestObject = await buildRequestObject(this.context);
+      const requestObject = await buildRequestObject(context);
       this.request = requestObject;
       this.message = buildErrorMessage(requestObject);
     } catch (e) {
