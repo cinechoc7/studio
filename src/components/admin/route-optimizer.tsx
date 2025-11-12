@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Clock, Route } from "lucide-reload";
+import { Loader2, Sparkles, Clock, Route } from "lucide-react";
 
 const initialState = {
   message: "",
