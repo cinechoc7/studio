@@ -38,6 +38,41 @@ function convertTimestamps(data: any): any {
   return data;
 }
 
+const examplePackages: Package[] = [
+    {
+        id: 'EXEMPLE1',
+        adminId: 'dummy-admin-id',
+        sender: { name: 'Boutique de Gadgets', address: '123 Rue de l\'Innovation, 75002 Paris' },
+        recipient: { name: 'Jean Dupont', address: '45 Avenue des Champs-Élysées, 75008 Paris' },
+        origin: 'Paris, France',
+        destination: 'Paris, France',
+        currentStatus: 'Livré',
+        statusHistory: [
+            { status: 'Livré', location: 'Paris, France', timestamp: new Date('2023-10-27T14:00:00Z') },
+            { status: 'En cours de livraison', location: 'Centre de distribution Paris', timestamp: new Date('2023-10-27T09:30:00Z') },
+            { status: 'Arrivé au hub de distribution', location: 'Hub de Paris', timestamp: new Date('2023-10-26T22:15:00Z') },
+            { status: 'En cours d\'acheminement', location: 'Centre de tri, Lyon', timestamp: new Date('2023-10-26T10:00:00Z') },
+            { status: 'Pris en charge', location: 'Entrepôt de Lyon', timestamp: new Date('2023-10-25T18:00:00Z') }
+        ],
+        createdAt: new Date('2023-10-25T18:00:00Z'),
+    },
+    {
+        id: 'EXEMPLE2',
+        adminId: 'dummy-admin-id',
+        sender: { name: 'Librairie Le Savoir', address: '15 Rue de la Paix, 75001 Paris' },
+        recipient: { name: 'Marie Curie', address: '22 Rue de la Liberté, 13001 Marseille' },
+        origin: 'Paris, France',
+        destination: 'Marseille, France',
+        currentStatus: 'En cours d\'acheminement',
+        statusHistory: [
+            { status: 'En cours d\'acheminement', location: 'Sur l\'autoroute A7', timestamp: new Date() },
+            { status: 'Arrivé au hub de distribution', location: 'Hub de Lyon', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+            { status: 'Pris en charge', location: 'Entrepôt de Paris', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) }
+        ],
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    }
+];
+
 
 // Hook to get packages and subscribe to updates for the current admin
 export function usePackages() {
@@ -54,6 +89,10 @@ export function usePackages() {
 
     const packages = useMemo(() => {
         if (!data) return [];
+        // If the database returns no packages, show the example packages.
+        if (data.length === 0) {
+            return examplePackages;
+        }
         return data.map(pkg => convertTimestamps(pkg) as Package);
     }, [data]);
     
@@ -63,11 +102,20 @@ export function usePackages() {
         }
     }, [error]);
 
-    return { packages, isLoading: isUserLoading || isPackagesLoading };
+    // Combine loading states: still loading if user is loading OR if packages are loading
+    const isLoading = isUserLoading || (!!user && isPackagesLoading);
+
+    return { packages, isLoading };
 }
 
 
 export async function getPackageById(firestore: Firestore, id: string): Promise<Package | undefined> {
+    // First, check if it's an example package
+    const examplePkg = examplePackages.find(p => p.id === id);
+    if (examplePkg) {
+        return examplePkg;
+    }
+
     const docRef = doc(firestore, "packages", id);
     try {
         const docSnap = await getDoc(docRef);

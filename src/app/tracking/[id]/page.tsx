@@ -8,62 +8,32 @@ import { AlertCircle, ArrowLeft, Package as PackageIcon, MapPin, Calendar, Check
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import type { Package } from "@/lib/types";
-import { doc, onSnapshot } from 'firebase/firestore';
+import { getPackageById } from "@/lib/data";
+
 
 type TrackingPageProps = {
   params: { id: string };
 };
 
-function convertTimestamps(data: any): any {
-    if (data && typeof data.toDate === 'function') { // Firebase Timestamp
-        return data.toDate();
-    }
-    if (Array.isArray(data)) {
-        return data.map(convertTimestamps);
-    }
-    if (data !== null && typeof data === 'object') {
-        return Object.keys(data).reduce((acc, key) => {
-            acc[key] = convertTimestamps(data[key]);
-            return acc;
-        }, {} as any);
-    }
-    return data;
-}
 
 export default function TrackingPage({ params }: TrackingPageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
-  const resolvedParams = use(params);
-  const packageId = resolvedParams.id.toUpperCase();
+  const packageId = params.id.toUpperCase();
   const firestore = useFirestore();
 
-  const packageRef = useMemoFirebase(() => {
-    if (!packageId || !firestore) return null;
-    return doc(firestore, 'packages', packageId);
-  }, [packageId, firestore]);
-
   useEffect(() => {
-    if (!packageRef) {
-        setPkg(null); // Set to null if there's no ref to avoid undefined state
-        return;
+    // Since we are not using real-time updates on the public tracking page
+    // we can use a one-time fetch function.
+    const fetchPackage = async () => {
+        if (firestore) {
+            const foundPackage = await getPackageById(firestore, packageId);
+            setPkg(foundPackage || null);
+        }
     };
-
-    const unsubscribe = onSnapshot(packageRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const convertedData = convertTimestamps(data);
-        setPkg({ id: docSnap.id, ...convertedData } as Package);
-      } else {
-        setPkg(null);
-      }
-      }, (error) => {
-        console.error("Error fetching package in real-time:", error);
-        setPkg(null);
-    });
-
-    return () => unsubscribe();
-  }, [packageRef]);
+    fetchPackage();
+  }, [packageId, firestore]);
 
 
   if (pkg === undefined) {
@@ -96,7 +66,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
 
   const isDelivered = pkg.currentStatus === 'Livré';
   const lastUpdate = pkg.statusHistory && pkg.statusHistory.length > 0
-    ? new Date(pkg.statusHistory[0].timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric'})
+    ? new Date(pkg.statusHistory[0].timestamp as Date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric'})
     : 'N/A';
 
   return (
@@ -118,12 +88,12 @@ export default function TrackingPage({ params }: TrackingPageProps) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className={`p-6 ${isDelivered ? 'bg-green-100' : 'bg-blue-50'}`}>
+                    <div className={`p-6 ${isDelivered ? 'bg-green-100/10' : 'bg-blue-500/10'}`}>
                         <h3 className="font-bold text-lg flex items-center">
-                            {isDelivered ? <CheckCircle className="mr-3 h-8 w-8 text-green-600"/> : <PackageIcon className="mr-3 h-8 w-8 text-primary"/>}
+                            {isDelivered ? <CheckCircle className="mr-3 h-8 w-8 text-green-500"/> : <PackageIcon className="mr-3 h-8 w-8 text-primary"/>}
                             <span className="flex flex-col">
                                 Statut Actuel:
-                                <span className={`text-2xl font-extrabold ${isDelivered ? 'text-green-600' : 'text-primary'}`}>{pkg.currentStatus}</span>
+                                <span className={`text-2xl font-extrabold ${isDelivered ? 'text-green-500' : 'text-primary'}`}>{pkg.currentStatus}</span>
                             </span>
                         </h3>
                     </div>
