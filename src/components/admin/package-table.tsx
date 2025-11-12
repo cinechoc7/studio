@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Package as PackageIcon, Trash2 } from "lucide-react";
+import { MoreHorizontal, Package as PackageIcon, Trash2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/firebase";
 import { useFormStatus } from "react-dom";
 import { VariantProps } from "class-variance-authority";
+import { EditPackageDialog } from "./edit-package-dialog";
 
 type PackageTableProps = {
   packages: Package[];
@@ -166,6 +167,9 @@ export function PackageTable({ packages }: PackageTableProps) {
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <DropdownMenuItem onClick={() => handleViewDetails(pkg.id)}>
                                             Voir les détails
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                            <EditPackageDialog pkg={pkg} asTrigger />
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DeletePackageDialog packageId={pkg.id} />

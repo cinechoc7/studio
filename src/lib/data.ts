@@ -16,6 +16,7 @@ import {
   Timestamp,
   where,
   type Firestore,
+  FieldValue,
 } from 'firebase/firestore';
 
 
@@ -142,34 +143,38 @@ export async function getPackageById(firestore: Firestore, id: string): Promise<
     }
 }
 
-export async function createPackage(firestore: any, pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
+export async function createPackage(
+    firestore: Firestore,
+    packageId: string,
+    pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>,
+    adminId: string
+): Promise<Package> {
+
+    const docRef = firestore.collection('packages').doc(packageId);
+
+    const docSnap = await docRef.get();
+    if (docSnap.exists()) {
+        throw new Error(`Package with ID ${packageId} already exists.`);
+    }
+
     const statusHistory = [{
         status: 'Pris en charge',
         location: pkgData.origin,
         timestamp: new Date(),
     }];
 
-    // Generate a 6-character alphanumeric ID
-    const newId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const docRef = firestore.collection('packages').doc(newId);
-
-
     const newPackageData = {
         ...pkgData,
         adminId: adminId,
-        currentStatus: 'Pris en charge',
-        statusHistory: statusHistory,
-        createdAt: FieldValue.serverTimestamp()
+        currentStatus: 'Pris en charge' as PackageStatus,
+        statusHistory: statusHistory.map(s => ({...s, timestamp: serverTimestamp()})),
+        createdAt: serverTimestamp()
     };
     
-    try {
-        await docRef.set(newPackageData);
-        const createdPackage = { id: newId, ...pkgData, ...newPackageData, createdAt: new Date() };
-        return convertTimestamps(createdPackage) as Package;
-    } catch (error) {
-        console.error("Error creating package:", error);
-        throw error;
-    }
+    await docRef.set(newPackageData);
+    
+    const createdPackage = { id: packageId, ...pkgData, ...newPackageData, createdAt: new Date() };
+    return convertTimestamps(createdPackage) as Package;
 }
 
 

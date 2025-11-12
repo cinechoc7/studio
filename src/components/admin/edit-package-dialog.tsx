@@ -16,13 +16,14 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createPackageAction } from '@/lib/actions';
-import { Loader2, PlusCircle, PackagePlus, Barcode } from 'lucide-react';
+import { updatePackageAction } from '@/lib/actions';
+import { Loader2, PackagePlus, Barcode, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/firebase';
-import type { ContactInfo } from '@/lib/types';
+import type { Package } from '@/lib/types';
 import { Building, Mail, MapPin, Phone, User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const initialState = {
   message: '',
@@ -34,27 +35,24 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" disabled={pending} className="w-full sm:w-auto bg-primary hover:bg-primary/90">
-      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackagePlus className="mr-2 h-4 w-4" />}
-      Créer le Colis
+      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
+      Enregistrer les modifications
     </Button>
   );
 }
 
-export function AddPackageDialog() {
+interface EditPackageDialogProps {
+    pkg: Package;
+    asTrigger?: boolean;
+}
+
+export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogProps) {
   const auth = useAuth();
-  const [state, formAction] = useActionState(createPackageAction, initialState);
+  const [state, formAction] = useActionState(updatePackageAction, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [lastSender, setLastSender] = useState<ContactInfo | null>(null);
-
-  useEffect(() => {
-    const savedSender = localStorage.getItem('lastSender');
-    if (savedSender) {
-      setLastSender(JSON.parse(savedSender));
-    }
-  }, []);
 
   useEffect(() => {
     if (state.message) {
@@ -64,46 +62,37 @@ export function AddPackageDialog() {
         variant: state.success ? 'default' : 'destructive',
       });
       if (state.success) {
-        const formData = new FormData(formRef.current!);
-        const newSender: ContactInfo = {
-            name: formData.get('senderName') as string,
-            address: formData.get('senderAddress') as string,
-            email: formData.get('senderEmail') as string,
-            phone: formData.get('senderPhone') as string,
-        };
-        setLastSender(newSender);
-        localStorage.setItem('lastSender', JSON.stringify(newSender));
-        
         closeButtonRef.current?.click();
-        formRef.current?.reset();
         setOpen(false);
       }
     }
   }, [state, toast]);
+  
+  const isExamplePackage = pkg.id.startsWith('CM');
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="lg" className="bg-primary hover:bg-primary/90">
-          <PlusCircle className="mr-2 h-5 w-5" />
-          Nouveau Colis
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+  const dialogContent = (
+    <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl text-foreground"> <PackagePlus className="text-primary"/> Créer un nouveau colis</DialogTitle>
+          <DialogTitle className="flex items-center gap-2 text-2xl text-foreground"> <Pencil className="text-primary"/> Modifier le colis</DialogTitle>
           <DialogDescription>
-            Remplissez les informations ci-dessous pour enregistrer un nouveau colis et générer son code de suivi.
+            Modifiez les informations du colis. Le code de suivi peut également être modifié.
           </DialogDescription>
         </DialogHeader>
+        { isExamplePackage ? (
+            <div className="py-8 text-center text-muted-foreground">
+                <p>Les colis d'exemple ne peuvent pas être modifiés.</p>
+                <p className="text-sm">Veuillez créer un nouveau colis pour tester la fonctionnalité d'édition.</p>
+            </div>
+        ) : (
         <form ref={formRef} action={formAction} className="space-y-6 pt-4">
+          <input type="hidden" name="originalPackageId" value={pkg.id} />
           {auth.currentUser && <input type="hidden" name="adminId" value={auth.currentUser.uid} />}
           
            <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
                 <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Barcode className="text-primary"/>Code de suivi</h3>
                  <div className="space-y-2">
                     <Label htmlFor="packageId">Code de suivi (ID du colis)</Label>
-                    <Input id="packageId" name="packageId" placeholder="Ex: CM123456789FR" required />
+                    <Input id="packageId" name="packageId" defaultValue={pkg.id} required />
                     {state.errors?.packageId && <p className="text-sm text-destructive">{state.errors.packageId}</p>}
                 </div>
             </div>
@@ -114,22 +103,22 @@ export function AddPackageDialog() {
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Building className="text-primary"/>Informations de l'Expéditeur</h3>
               <div className="space-y-2">
                 <Label htmlFor="senderName">Nom Complet</Label>
-                <Input id="senderName" name="senderName" placeholder="Ex: John Doe" defaultValue={lastSender?.name} required />
+                <Input id="senderName" name="senderName" defaultValue={pkg.sender.name} required />
                 {state.errors?.senderName && <p className="text-sm text-destructive">{state.errors.senderName}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senderAddress">Adresse Complète</Label>
-                <Input id="senderAddress" name="senderAddress" placeholder="Ex: 123 Rue Principale, 75001 Paris" defaultValue={lastSender?.address} required />
+                <Input id="senderAddress" name="senderAddress" defaultValue={pkg.sender.address} required />
                 {state.errors?.senderAddress && <p className="text-sm text-destructive">{state.errors.senderAddress}</p>}
               </div>
                <div className="space-y-2">
                 <Label htmlFor="senderEmail">Email (Optionnel)</Label>
-                <Input id="senderEmail" name="senderEmail" type="email" placeholder="Ex: expediteur@email.com" defaultValue={lastSender?.email} />
+                <Input id="senderEmail" name="senderEmail" type="email" defaultValue={pkg.sender.email} />
                 {state.errors?.senderEmail && <p className="text-sm text-destructive">{state.errors.senderEmail}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senderPhone">Téléphone (Optionnel)</Label>
-                <Input id="senderPhone" name="senderPhone" type="tel" placeholder="Ex: 0123456789" defaultValue={lastSender?.phone} />
+                <Input id="senderPhone" name="senderPhone" type="tel" defaultValue={pkg.sender.phone} />
                 {state.errors?.senderPhone && <p className="text-sm text-destructive">{state.errors.senderPhone}</p>}
               </div>
             </div>
@@ -139,22 +128,22 @@ export function AddPackageDialog() {
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><User className="text-primary"/>Informations du Destinataire</h3>
               <div className="space-y-2">
                 <Label htmlFor="recipientName">Nom Complet</Label>
-                <Input id="recipientName" name="recipientName" placeholder="Ex: Jane Smith" required />
+                <Input id="recipientName" name="recipientName" defaultValue={pkg.recipient.name} required />
                 {state.errors?.recipientName && <p className="text-sm text-destructive">{state.errors.recipientName}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="recipientAddress">Adresse Complète</Label>
-                <Input id="recipientAddress" name="recipientAddress" placeholder="Ex: 456 Avenue Secondaire, 13000 Marseille" required />
+                <Input id="recipientAddress" name="recipientAddress" defaultValue={pkg.recipient.address} required />
                 {state.errors?.recipientAddress && <p className="text-sm text-destructive">{state.errors.recipientAddress}</p>}
               </div>
                <div className="space-y-2">
                 <Label htmlFor="recipientEmail">Email (Optionnel)</Label>
-                <Input id="recipientEmail" name="recipientEmail" type="email" placeholder="Ex: destinataire@email.com" />
+                <Input id="recipientEmail" name="recipientEmail" type="email" defaultValue={pkg.recipient.email} />
                 {state.errors?.recipientEmail && <p className="text-sm text-destructive">{state.errors.recipientEmail}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="recipientPhone">Téléphone (Optionnel)</Label>
-                <Input id="recipientPhone" name="recipientPhone" type="tel" placeholder="Ex: 0612345678" />
+                <Input id="recipientPhone" name="recipientPhone" type="tel" defaultValue={pkg.recipient.phone} />
                 {state.errors?.recipientPhone && <p className="text-sm text-destructive">{state.errors.recipientPhone}</p>}
               </div>
             </div>
@@ -168,12 +157,12 @@ export function AddPackageDialog() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="origin">Ville d'origine</Label>
-                    <Input id="origin" name="origin" placeholder="Ex: Paris, France" required />
+                    <Input id="origin" name="origin" defaultValue={pkg.origin} required />
                     {state.errors?.origin && <p className="text-sm text-destructive">{state.errors.origin}</p>}
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="destination">Ville de destination</Label>
-                    <Input id="destination" name="destination" placeholder="Ex: Marseille, France" required />
+                    <Input id="destination" name="destination" defaultValue={pkg.destination} required />
                     {state.errors?.destination && <p className="text-sm text-destructive">{state.errors.destination}</p>}
                 </div>
             </div>
@@ -186,7 +175,31 @@ export function AddPackageDialog() {
             <SubmitButton />
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
+  );
+
+  if (asTrigger) {
+      return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger disabled={isExamplePackage} className={cn("relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50", isExamplePackage && "cursor-not-allowed opacity-50")}>
+                <Pencil className="mr-2 h-4 w-4" />
+                <span>Modifier</span>
+            </DialogTrigger>
+            {dialogContent}
+        </Dialog>
+      )
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" disabled={isExamplePackage}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Modifier le Colis
+        </Button>
+      </DialogTrigger>
+      {dialogContent}
     </Dialog>
   );
 }

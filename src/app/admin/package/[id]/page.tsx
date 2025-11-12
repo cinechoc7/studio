@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Loader2, User, Mail, Phone, Home } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, User, Mail, Phone, Home, Pencil } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { UpdateStatusForm } from "@/components/admin/update-status-form";
@@ -18,6 +18,7 @@ import type { Package } from "@/lib/types";
 import { Separator } from "@/components/ui/separator";
 import { doc, onSnapshot } from "firebase/firestore";
 import { getPackageById } from "@/lib/data";
+import { EditPackageDialog } from "@/components/admin/edit-package-dialog";
 
 type AdminPackagePageProps = {
   params: { id: string };
@@ -103,6 +104,9 @@ export default function AdminPackagePage({ params: paramsProp }: AdminPackagePag
         <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
           Colis <span className="font-mono text-primary">#{pkg.id}</span>
         </h1>
+        <div className="ml-auto flex items-center gap-2">
+            <EditPackageDialog pkg={pkg} />
+        </div>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <div className="lg:col-span-2 grid gap-6">
