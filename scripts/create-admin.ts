@@ -30,7 +30,7 @@ async function createAdminUser() {
   
   // We need to initialize the admin app to write to Firestore with admin privileges
   if(!getAdminApps().length) {
-    initializeAdminApp();
+    initializeApp();
   }
   const adminFirestore = getAdminFirestore();
 

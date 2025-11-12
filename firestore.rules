@@ -15,15 +15,17 @@ service cloud.firestore {
     
     function isAdmin() {
       // Check for the existence of a document in the 'roles_admin' collection for the user's UID.
-      // This is more performant for rules than checking a field in a large collection.
+      // This is more performant and the standard way to handle roles in security rules.
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     match /packages/{packageId} {
-      // Allow read access to a package if the user is an admin. The query is responsible for filtering.
-      allow read: if isSignedIn() && isAdmin();
-
-      // Allow an admin to list packages, but only if their query specifically filters by their own adminId.
+      // Allow read access to a specific package if the user is an admin and owns the package.
+      // Note: This rule is for direct `get` requests. Listing is handled by the `list` rule.
+      allow get: if isSignedIn() && isAdmin() && resource.data.adminId == request.auth.uid;
+      
+      // Allow an admin to LIST packages, but ONLY if their query includes a filter for their own adminId.
+      // This is a critical security measure to prevent admins from listing all packages.
       allow list: if isSignedIn() && isAdmin() && request.query.filters.map(f => f.field.string() == 'adminId' && f.op == '==' && f.value == request.auth.uid).hasAny([true]);
       
       // Allow an admin to create a package if the new package's adminId is their own UID.
@@ -33,12 +35,13 @@ service cloud.firestore {
       allow update, delete: if isSignedIn() && isAdmin() && resource.data.adminId == request.auth.uid;
     }
     
-    // This collection is only for checking roles. Only admins can write to their own role document.
+    // This collection is only for checking roles. Only admins can read/write to their own role document.
     match /roles_admin/{uid} {
         allow read, write: if isSignedIn() && isOwner(uid);
     }
     
     match /admins/{adminId} {
+        // Only allow an admin to read or modify their own document in the 'admins' collection.
         allow read, write: if isSignedIn() && isOwner(adminId);
     }
 
