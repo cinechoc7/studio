@@ -5,10 +5,19 @@ import { z } from "zod";
 import { updatePackageStatus as dbUpdatePackageStatus, createPackage as dbCreatePackage, deletePackage as dbDeletePackage } from "./data";
 import type { PackageStatus } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
-import { getApps, initializeApp } from 'firebase/app';
-import { getFirestore as getClientFirestore, doc, getDoc } from 'firebase/firestore';
+import { getApps, initializeApp, getApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from "@/firebase/config";
 import type { DecodedIdToken } from "firebase-admin/auth";
+
+// --- START: Firestore Server-Side Initialization ---
+// Initialize Firebase app if it hasn't been already
+if (!getApps().length) {
+    initializeApp(firebaseConfig);
+}
+// Get a stable Firestore instance for all server actions in this file
+const firestore = getFirestore();
+// --- END: Firestore Server-Side Initialization ---
 
 
 // Helper to get admin SDK for server-side auth verification
@@ -22,7 +31,7 @@ async function getAdminAuth() {
     throw new Error('Missing FIREBASE_SERVICE_ACCOUNT for admin operations. Ensure it is set in your environment variables.');
   }
 
-  // Initialize app if not already initialized
+  // Initialize admin app if not already initialized
   if (!admin.apps.length) {
     admin.initializeApp({
       credential: cert(JSON.parse(serviceAccount)),
@@ -31,13 +40,6 @@ async function getAdminAuth() {
   return getAdminAuth();
 }
 
-// Helper to get client SDK firestore instance
-function getFirestore() {
-    if (!getApps().length) {
-        initializeApp(firebaseConfig);
-    }
-    return getClientFirestore(getApps()[0]);
-}
 
 // Helper to get current user on server from an ID token
 async function getCurrentUser(idToken: string): Promise<DecodedIdToken | null> {
@@ -47,7 +49,6 @@ async function getCurrentUser(idToken: string): Promise<DecodedIdToken | null> {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     
     // Check if the user is an admin
-    const firestore = getFirestore();
     const adminDocRef = doc(firestore, 'admins', decodedToken.uid);
     const adminDoc = await getDoc(adminDocRef);
 
@@ -102,7 +103,6 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
     }
     
     const { packageId, status, location } = validatedFields.data;
-    const firestore = getFirestore();
     await dbUpdatePackageStatus(firestore, packageId, status as PackageStatus, location, user.uid);
 
     revalidatePath("/admin");
@@ -171,8 +171,7 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             destination,
         };
         
-        // The database function now handles its own Firestore instance
-        const newPackage = await dbCreatePackage(newPackageData, adminId);
+        const newPackage = await dbCreatePackage(firestore, newPackageData, adminId);
         
         revalidatePath("/admin");
 
@@ -211,7 +210,6 @@ export async function deletePackageAction(prevState: any, formData: FormData) {
     }
 
     try {
-        const firestore = getFirestore();
         await dbDeletePackage(firestore, packageId, user.uid);
         revalidatePath('/admin');
         return { message: 'Colis supprimé avec succès.', success: true };

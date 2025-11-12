@@ -16,21 +16,13 @@ import {
   Timestamp,
   Firestore,
   where,
-  getFirestore,
 } from 'firebase/firestore';
 import { getApps, initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 // Custom event dispatcher to notify about package updates
 const packageUpdateEvent = new Event('packagesUpdated');
-
-// Helper to get a stable firestore instance, initializing if needed.
-const getDb = () => {
-    if (!getApps().length) {
-        initializeApp(firebaseConfig);
-    }
-    return getFirestore(getApps()[0]);
-}
 
 function convertTimestamps(data: any): any {
   if (data instanceof Timestamp) {
@@ -94,9 +86,7 @@ export async function getPackageById(firestore: Firestore, id: string): Promise<
     }
 }
 
-export async function createPackage(pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
-    const firestore = getDb(); // Get a stable firestore instance
-    
+export async function createPackage(firestore: Firestore, pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
     const statusHistory = [{
         status: 'Pris en charge',
         location: pkgData.origin,
