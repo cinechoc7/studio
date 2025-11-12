@@ -15,8 +15,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleSignOut = async () => {
     try {
       await auth.signOut();
-      // Remove the cookie
-      document.cookie = "firebaseIdToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      
+      // Call the logout API route to clear the cookie
+      await fetch('/api/logout', { method: 'POST' });
+      
       router.push('/login');
     } catch (error) {
       console.error("Error signing out: ", error);
@@ -68,7 +70,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </Avatar>
                 <div className="text-sm">
                     <p className="font-semibold text-sidebar-foreground">Admin</p>
-                    <p className="text-xs text-sidebar-foreground/70">admin@colis-suivi.pro</p>
+                    <p className="text-xs text-sidebar-foreground/70">{auth.currentUser?.email}</p>
                 </div>
             </div>
         </div>
