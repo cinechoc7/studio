@@ -3,7 +3,7 @@ import { getAuth, type User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { getFirestore } from 'firebase/firestore';
 
-type SecurityRuleContext = {
+export type SecurityRuleContext = {
   path: string;
   operation: 'get' | 'list' | 'create' | 'update' | 'delete' | 'write';
   requestResourceData?: any;
@@ -112,12 +112,15 @@ ${JSON.stringify(requestObject, null, 2)}`;
  * available in Firestore Security Rules.
  */
 export class FirestorePermissionError extends Error {
-  public readonly request: SecurityRuleRequest | null = null;
+  public request: SecurityRuleRequest | null = null;
+  // Store context privately to use in async initialization
+  private context: SecurityRuleContext;
 
   constructor(context: SecurityRuleContext, serverError?: Error) {
     // Default message in case async operations fail
     super(serverError?.message || 'Firestore permission error occurred.');
     this.name = 'FirebaseError'; // To match Firebase's error naming
+    this.context = context; // Store context immediately
   }
   
   /**
@@ -134,7 +137,4 @@ export class FirestorePermissionError extends Error {
        // The message will fall back to the one set in the constructor
     }
   }
-  
-  // Store context privately to use in async initialization
-  private context: SecurityRuleContext;
 }
