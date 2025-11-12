@@ -7,6 +7,13 @@ import { Search, ShieldCheck, Zap, Package, ArrowRight, Star, Plus } from 'lucid
 import Image from 'next/image';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
@@ -22,8 +29,8 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
 
 function TestimonialCard({ name, avatar, text, rating }: { name: string, avatar: string, text: string, rating: number }) {
     return (
-        <Card className="bg-card/80 backdrop-blur-sm border-border/30 shadow-2xl shadow-black/30 p-6">
-            <CardContent className="p-0">
+        <Card className="bg-card/80 backdrop-blur-sm border-border/30 shadow-2xl shadow-black/30 p-6 h-full">
+            <CardContent className="p-0 flex flex-col h-full">
                 <div className="flex items-center mb-4">
                     <Avatar className="h-12 w-12 mr-4">
                         <AvatarImage src={avatar} alt={name} />
@@ -38,11 +45,68 @@ function TestimonialCard({ name, avatar, text, rating }: { name: string, avatar:
                         </div>
                     </div>
                 </div>
-                <p className="text-muted-foreground italic">"{text}"</p>
+                <p className="text-muted-foreground italic flex-1">"{text}"</p>
             </CardContent>
         </Card>
     );
 }
+
+const testimonials = [
+    {
+        name: "Sophie L.",
+        avatar: "https://i.pravatar.cc/150?u=sophie",
+        rating: 5,
+        text: "Enfin une application de suivi qui est à la fois belle et fonctionnelle. Je sais toujours exactement où est mon colis. C'est très rassurant !"
+    },
+    {
+        name: "Marc D.",
+        avatar: "https://i.pravatar.cc/150?u=marc",
+        rating: 5,
+        text: "Le suivi en temps réel est incroyablement précis. L'interface est super intuitive, même pour quelqu'un qui n'est pas très à l'aise avec la technologie."
+    },
+    {
+        name: "Julien B.",
+        avatar: "https://i.pravatar.cc/150?u=julien",
+        rating: 5,
+        text: "Colimove a changé ma façon de gérer mes livraisons professionnelles. C'est devenu un outil indispensable pour mon e-commerce. Bravo à l'équipe !"
+    },
+    {
+        name: "Laura M.",
+        avatar: "https://i.pravatar.cc/150?u=laura",
+        rating: 5,
+        text: "Service client au top ! J'avais une question sur mon colis et j'ai eu une réponse en moins de 5 minutes. Je recommande vivement !"
+    },
+    {
+        name: "Alexandre P.",
+        avatar: "https://i.pravatar.cc/150?u=alexandre",
+        rating: 4,
+        text: "Très bonne application, fait ce qu'elle promet. Juste un petit bémol sur l'estimation de l'heure d'arrivée qui est parfois un peu large, mais sinon c'est parfait."
+    },
+    {
+        name: "Chloé T.",
+        avatar: "https://i.pravatar.cc/150?u=chloe",
+        rating: 5,
+        text: "J'adore le design ! C'est tellement plus agréable que les sites de suivi habituels. Suivre un colis devient presque une expérience amusante."
+    },
+    {
+        name: "Thomas R.",
+        avatar: "https://i.pravatar.cc/150?u=thomas",
+        rating: 5,
+        text: "En tant que gestionnaire de stock, j'utilise Colimove tous les jours. La fiabilité est incroyable. Je ne pourrais plus m'en passer."
+    },
+     {
+        name: "Émilie G.",
+        avatar: "https://i.pravatar.cc/150?u=emilie",
+        rating: 5,
+        text: "L'application mobile est géniale. Je reçois les notifications en temps réel et je n'ai plus besoin de vérifier mes mails constamment. Un vrai gain de temps."
+    },
+    {
+        name: "David C.",
+        avatar: "https://i.pravatar.cc/150?u=david",
+        rating: 5,
+        text: "Le meilleur site de suivi de colis, et de loin. Simple, efficace, et pas de publicités envahissantes. C'est exactement ce que je cherchais."
+    }
+];
 
 export default function Home() {
   return (
@@ -156,26 +220,25 @@ export default function Home() {
                 <h2 className="mb-16 text-3xl font-bold text-center text-foreground md:text-4xl">
                     Ce que nos utilisateurs disent de nous
                 </h2>
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-                    <TestimonialCard
-                        name="Sophie L."
-                        avatar="https://i.pravatar.cc/150?u=sophie"
-                        rating={5}
-                        text="Enfin une application de suivi qui est à la fois belle et fonctionnelle. Je sais toujours exactement où est mon colis. C'est très rassurant !"
-                    />
-                    <TestimonialCard
-                        name="Marc D."
-                        avatar="https://i.pravatar.cc/150?u=marc"
-                        rating={5}
-                        text="Le suivi en temps réel est incroyablement précis. L'interface est super intuitive, même pour quelqu'un qui n'est pas très à l'aise avec la technologie."
-                    />
-                    <TestimonialCard
-                        name="Julien B."
-                        avatar="https://i.pravatar.cc/150?u=julien"
-                        rating={5}
-                        text="Colimove a changé ma façon de gérer mes livraisons professionnelles. C'est devenu un outil indispensable pour mon e-commerce. Bravo à l'équipe !"
-                    />
-                </div>
+                <Carousel
+                    opts={{
+                        align: "start",
+                        loop: true,
+                    }}
+                    className="w-full"
+                >
+                    <CarouselContent>
+                        {testimonials.map((testimonial, index) => (
+                        <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                            <div className="p-1 h-full">
+                               <TestimonialCard {...testimonial} />
+                            </div>
+                        </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="absolute left-[-50px] top-1/2 -translate-y-1/2 fill-black" />
+                    <CarouselNext className="absolute right-[-50px] top-1/2 -translate-y-1/2 fill-black" />
+                </Carousel>
             </div>
         </section>
 
