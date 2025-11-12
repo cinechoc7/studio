@@ -11,9 +11,6 @@ import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 
 // --- START: Firebase Admin SDK Initialization ---
 if (!getApps().length) {
-    // This check is important to prevent re-initialization.
-    // In a deployed environment (like Firebase App Hosting), initialization
-    // without credentials will automatically use the service account of the environment.
     initializeApp();
 }
 const adminAuth = getAdminAuth();
@@ -28,9 +25,6 @@ const updateStatusSchema = z.object({
 });
 
 export async function updatePackageStatusAction(prevState: any, formData: FormData) {
-    // This action requires authentication. For simplicity in this context,
-    // we're assuming the user is authenticated. In a real app, you'd
-    // get the user's session here.
   try {
     const validatedFields = updateStatusSchema.safeParse({
       packageId: formData.get('packageId'),
@@ -47,10 +41,7 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
     }
     
     const { packageId, status, location } = validatedFields.data;
-    // In a real app, you would get the adminId from the session.
-    // For now, we allow any authenticated user to update. This should be secured.
-    const adminId = "SERVER_USER"; // Placeholder
-    await dbUpdatePackageStatus(firestore, packageId, status as PackageStatus, location, adminId);
+    await dbUpdatePackageStatus(firestore, packageId, status as PackageStatus, location);
 
     revalidatePath("/admin");
     revalidatePath(`/admin/package/${packageId}`);
@@ -58,10 +49,7 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
 
     return { message: `Statut du colis mis à jour en "${status}".`, success: true };
   } catch (error: any) {
-    if (error.message.includes('permission-denied')) {
-        return { message: "Permission refusée. Vous n'êtes pas autorisé à modifier ce colis.", success: false };
-    }
-    return { message: "Une erreur inattendue est survenue.", success: false };
+    return { message: error.message || "Une erreur inattendue est survenue.", success: false };
   }
 }
 
@@ -97,18 +85,13 @@ export async function createPackageAction(prevState: any, formData: FormData) {
         };
     }
 
-    const { adminId, ...packageData } = validatedFields.data;
-    
-    if (!adminId) {
-        return { message: 'Utilisateur non authentifié ou invalide.', success: false, errors: null }
-    }
-    
     try {
         const { 
+            adminId,
             senderName, senderAddress, senderEmail, senderPhone,
             recipientName, recipientAddress, recipientEmail, recipientPhone,
             origin, destination
-        } = packageData;
+        } = validatedFields.data;
 
         const newPackageData = {
             sender: { name: senderName, address: senderAddress, email: senderEmail || undefined, phone: senderPhone || undefined },
@@ -149,19 +132,12 @@ export async function deletePackageAction(prevState: any, formData: FormData) {
 
     const { packageId } = validatedAuth.data;
 
-    // In a real app, you would get the adminId from the session
-    const adminId = "SERVER_USER"; // Placeholder
-
     try {
-        await dbDeletePackage(firestore, packageId, adminId);
+        await dbDeletePackage(firestore, packageId);
         revalidatePath('/admin');
         return { message: 'Colis supprimé avec succès.', success: true };
     } catch (error: any) {
-        if (error.message.includes('permission-denied')) {
-            return { message: "Permission refusée. Vous n'êtes pas autorisé à supprimer ce colis.", success: false };
-        }
-        console.error("Error deleting package:", error);
-        return { message: 'La suppression du colis a échoué.', success: false };
+        return { message: error.message || 'La suppression du colis a échoué.', success: false };
     }
 }
 

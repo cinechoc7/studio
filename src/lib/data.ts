@@ -42,7 +42,7 @@ function convertTimestamps(data: any): any {
 // Hook to get packages and subscribe to updates for the current admin
 export function usePackages() {
     const firestore = useFirestore();
-    const { user, isUserLoading } = useAuth();
+    const { user, isUserLoading } = useUser();
     
     const packagesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -106,11 +106,6 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
     
     try {
         await docRef.set(newPackageData);
-        // This won't work in a server action, but we keep it for potential client-side calls
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('packagesUpdated'));
-        }
-        // Admin SDK returns data differently, let's construct the return object manually
         const createdPackage = { id: newId, ...pkgData, ...newPackageData };
         return convertTimestamps(createdPackage) as Package;
     } catch (error) {
@@ -119,17 +114,16 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
     }
 }
 
-export async function updatePackageStatus(firestore: Firestore, id: string, newStatus: PackageStatus, location: string, adminId: string): Promise<Package | null> {
+export async function updatePackageStatus(firestore: Firestore, id: string, newStatus: PackageStatus, location: string): Promise<Package | null> {
     const docRef = firestore.collection('packages').doc(id);
 
     try {
         const docSnap = await docRef.get();
-        const docData = docSnap.data();
-        if (!docSnap.exists || docData?.adminId !== adminId) {
-             throw new Error("permission-denied");
+        if (!docSnap.exists) {
+             throw new Error("Package not found.");
         }
 
-        const currentPackageData = docData;
+        const currentPackageData = docSnap.data();
         
         const currentPackageStatusHistory = Array.isArray(currentPackageData.statusHistory) ? currentPackageData.statusHistory : [];
 
@@ -146,9 +140,6 @@ export async function updatePackageStatus(firestore: Firestore, id: string, newS
             statusHistory: updatedHistory,
         });
         
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new Event('packagesUpdated'));
-        }
         const updatedDoc = await docRef.get();
         return { id: updatedDoc.id, ...convertTimestamps(updatedDoc.data()) } as Package;
 
@@ -159,18 +150,10 @@ export async function updatePackageStatus(firestore: Firestore, id: string, newS
 }
 
 
-export async function deletePackage(firestore: Firestore, id: string, adminId: string): Promise<boolean> {
+export async function deletePackage(firestore: Firestore, id: string): Promise<boolean> {
     const docRef = firestore.collection("packages").doc(id);
     try {
-         const docSnap = await docRef.get();
-         const docData = docSnap.data();
-        if (!docSnap.exists || docData?.adminId !== adminId) {
-             throw new Error("permission-denied");
-        }
         await docRef.delete();
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('packagesUpdated'));
-        }
         return true;
     } catch (error) {
         console.error("Error deleting package:", error);
