@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -58,18 +57,16 @@ export default function LoginPage() {
   }
   
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center bg-gray-100 dark:bg-gray-950 p-4">
+    <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
        <div className="absolute top-8 left-8">
-            <Button asChild variant="outline">
-                <Link href="/" className="flex items-center gap-2">
-                    <Package className="w-5 h-5"/>
-                    <span className="font-semibold">Colimove</span>
-                </Link>
-            </Button>
+            <Link href="/" className="flex items-center gap-2 text-primary">
+                <Package className="w-6 h-6"/>
+                <span className="text-xl font-bold">Colimove</span>
+            </Link>
         </div>
-      <Card className="w-full max-w-sm shadow-2xl border-t-4 border-primary">
+      <Card className="w-full max-w-sm shadow-2xl border-t-4 border-accent">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Espace Administrateur</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">Espace Administrateur</CardTitle>
           <CardDescription>Entrez vos identifiants pour accéder au tableau de bord.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -83,6 +80,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
@@ -93,6 +91,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="h-11"
               />
             </div>
             {error && (
@@ -102,7 +101,7 @@ export default function LoginPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90" disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
               Se connecter
             </Button>

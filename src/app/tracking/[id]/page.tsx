@@ -44,7 +44,10 @@ export default function TrackingPage({ params }: TrackingPageProps) {
   }, [packageId, firestore]);
 
   useEffect(() => {
-    if (!packageRef) return;
+    if (!packageRef) {
+        setPkg(null); // Set to null if there's no ref to avoid undefined state
+        return;
+    };
 
     const unsubscribe = onSnapshot(packageRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -76,7 +79,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
     return (
       <main className="flex min-h-screen w-full flex-col items-center justify-center p-4 bg-background">
         <div className="w-full max-w-lg text-center">
-            <Alert variant="destructive" className="text-left">
+            <Alert variant="destructive" className="text-left shadow-lg">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Erreur de Suivi</AlertTitle>
               <AlertDescription>
@@ -97,28 +100,31 @@ export default function TrackingPage({ params }: TrackingPageProps) {
     : 'N/A';
 
   return (
-    <main className="min-h-screen w-full bg-background py-12 sm:py-24">
+    <main className="min-h-screen w-full bg-secondary/60 py-12 sm:py-16">
         <div className="container mx-auto max-w-4xl px-4">
             <div className="mb-8 flex justify-start">
-                <Button asChild variant="outline" className="bg-card">
+                <Button asChild variant="outline" className="bg-white shadow-md">
                     <Link href="/"><ArrowLeft className="mr-2 h-4 w-4"/> Nouvelle recherche</Link>
                 </Button>
             </div>
             
-            <Card className="shadow-lg overflow-hidden border border-border bg-secondary">
+            <Card className="shadow-2xl overflow-hidden border-t-4 border-accent">
                 <CardHeader className="bg-card p-6">
-                    <CardTitle className="text-2xl sm:text-3xl font-bold">
-                        Suivi du Colis <span className="text-primary font-mono">#{pkg.id}</span>
+                    <CardTitle className="text-2xl sm:text-3xl font-bold text-primary">
+                        Suivi du Colis <span className="text-accent font-mono">#{pkg.id}</span>
                     </CardTitle>
-                    <CardDescription className="text-base">
-                        Livraison pour <span className="font-semibold">{pkg.recipient.name}</span>
+                    <CardDescription className="text-base text-muted-foreground">
+                        Livraison pour <span className="font-semibold text-foreground">{pkg.recipient.name}</span>
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className={`p-6 ${isDelivered ? 'bg-green-500/10' : 'bg-primary/10'}`}>
-                        <h3 className="font-semibold text-lg flex items-center">
-                            {isDelivered ? <CheckCircle className="mr-3 h-7 w-7 text-green-400"/> : <PackageIcon className="mr-3 h-7 w-7 text-primary"/>}
-                            Statut Actuel: <span className={`ml-2 font-bold ${isDelivered ? 'text-green-400' : 'text-primary'}`}>{pkg.currentStatus}</span>
+                    <div className={`p-6 ${isDelivered ? 'bg-green-100' : 'bg-blue-50'}`}>
+                        <h3 className="font-bold text-lg flex items-center">
+                            {isDelivered ? <CheckCircle className="mr-3 h-8 w-8 text-green-600"/> : <PackageIcon className="mr-3 h-8 w-8 text-primary"/>}
+                            <span className="flex flex-col">
+                                Statut Actuel:
+                                <span className={`text-2xl font-extrabold ${isDelivered ? 'text-green-600' : 'text-primary'}`}>{pkg.currentStatus}</span>
+                            </span>
                         </h3>
                     </div>
 
@@ -151,7 +157,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
                     <Separator />
                     
                     <div className="p-6">
-                        <h3 className="font-bold text-xl mb-6 text-foreground">Historique du colis</h3>
+                        <h3 className="font-bold text-xl mb-6 text-primary">Historique du colis</h3>
                         <PackageStatusTimeline history={pkg.statusHistory} />
                     </div>
                 </CardContent>

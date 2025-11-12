@@ -1,147 +1,114 @@
 import { TrackingForm } from '@/components/tracking-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, PackageCheck, ShieldCheck, Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Search, PackageCheck, ShieldCheck, Zap, Package, ArrowRight, Star } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="flex flex-col items-center text-center p-6 bg-card rounded-xl shadow-sm border border-border">
-      <div className="p-4 bg-primary/10 rounded-full mb-4">
+    <div className="flex flex-col items-center p-6 text-center transition-transform duration-300 transform bg-white border rounded-xl shadow-lg border-border hover:-translate-y-2">
+      <div className="mb-4 text-accent">
         {icon}
       </div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <h3 className="mb-2 text-xl font-bold text-primary">{title}</h3>
       <p className="text-muted-foreground">{description}</p>
     </div>
   )
 }
 
-function Step({ icon, title, description, stepNumber }: { icon: React.ReactNode, title: string, description: string, stepNumber: string }) {
-    return (
-        <div className="relative flex flex-col items-center text-center p-4">
-             <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                {stepNumber}
-            </div>
-            <div className="mb-4 text-primary">
-                {icon}
-            </div>
-            <h3 className="text-lg font-semibold mb-2">{title}</h3>
-            <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-    );
-}
-
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <header className="p-4 sm:p-6 lg:p-8 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-primary">Colimove</h1>
-        <nav className="hidden md:flex gap-6 items-center">
-          <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary">Atouts</Link>
-          <Link href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-primary">Fonctionnement</Link>
-          <Link href="#about" className="text-sm font-medium text-muted-foreground hover:text-primary">A propos</Link>
-        </nav>
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+       <header className="absolute top-0 left-0 right-0 z-20 px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2">
+              <Package className="w-8 h-8 text-primary" />
+              <span className="text-2xl font-bold text-primary">Colimove</span>
+            </Link>
+             <Button asChild>
+                <Link href="/admin">
+                  Espace Admin <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+            </Button>
+          </div>
       </header>
 
       <main className="flex-1">
-        <section className="py-16 md:py-24 lg:py-32">
-            <div className="container px-4 md:px-6">
-                <div className="flex flex-col items-center text-center space-y-8">
-                    <div className="space-y-4">
-                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-                            Suivi de colis simple et rapide.
-                        </h1>
-                        <p className="max-w-[700px] mx-auto text-muted-foreground md:text-xl">
-                            Entrez votre numéro de suivi ci-dessous pour obtenir l'état d'avancement de votre livraison en temps réel.
-                        </p>
-                    </div>
-                    <div className="w-full max-w-lg">
-                        <Card className="shadow-lg border-t-4 border-primary bg-secondary">
-                            <CardHeader>
-                                <CardTitle className='flex items-center gap-2 text-xl'><Search className='text-primary'/> Suivre un colis</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <TrackingForm />
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
+        {/* Hero Section */}
+        <section className="relative flex items-center justify-center w-full min-h-[60vh] md:min-h-screen pt-20 pb-20">
+           <Image
+              src="https://picsum.photos/seed/logistics1/1920/1080"
+              alt="Warehouse background"
+              fill
+              className="object-cover"
+              data-ai-hint="warehouse logistics"
+              priority
+            />
+          <div className="absolute inset-0 bg-primary/80" />
+          <div className="relative z-10 px-4 text-center text-primary-foreground md:px-6">
+            <div className="max-w-3xl mx-auto">
+              <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
+                Suivi de Colis Simplifié.
+              </h1>
+              <p className="max-w-xl mx-auto mt-6 text-lg text-blue-100">
+                Entrez votre numéro de suivi pour voir la localisation de votre colis en temps réel. Simple, rapide et fiable.
+              </p>
             </div>
+            <div className="w-full max-w-2xl mx-auto mt-10">
+              <Card className="bg-white/10 backdrop-blur-md border-white/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-center gap-2 text-2xl text-white">
+                    <Search/> Suivre mon colis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TrackingForm />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </section>
 
-        <section id="features" className="py-16 md:py-24 bg-secondary">
-          <div className="container px-4 md:px-6">
-            <h2 className="text-3xl font-bold text-center mb-12">Nos atouts pour votre tranquilité</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Features Section */}
+        <section id="features" className="py-16 bg-secondary md:py-24">
+          <div className="container px-4 mx-auto md:px-6">
+            <h2 className="mb-12 text-3xl font-bold text-center text-primary md:text-4xl">
+              Une expérience de suivi inégalée
+            </h2>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               <FeatureCard 
-                icon={<ShieldCheck className="w-8 h-8 text-primary" />}
+                icon={<ShieldCheck className="w-12 h-12" />}
                 title="Fiabilité Maximale"
                 description="Nous offrons un suivi précis et des informations vérifiées à chaque étape du parcours de votre colis."
               />
               <FeatureCard 
-                icon={<Zap className="w-8 h-8 text-primary" />}
+                icon={<Zap className="w-12 h-12" />}
                 title="Rapidité en Temps Réel"
                 description="Recevez des mises à jour instantanées sur la localisation de votre colis, sans aucun délai."
               />
               <FeatureCard 
-                icon={<PackageCheck className="w-8 h-8 text-primary" />}
+                icon={<Star className="w-12 h-12" />}
                 title="Simplicité d'Utilisation"
                 description="Une interface claire et intuitive pour suivre votre colis en quelques clics, sans complication."
               />
             </div>
           </div>
         </section>
-
-        <section id="how-it-works" className="py-16 md:py-24 lg:py-32">
-            <div className="container mx-auto px-4">
-                <h2 className="text-3xl font-bold text-center mb-12">Comment ça marche ?</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-                    <Step 
-                        stepNumber="1"
-                        icon={<Search className="w-10 h-10" />}
-                        title="Entrez votre code"
-                        description="Saisissez le numéro de suivi de votre colis dans le champ de recherche."
-                    />
-                    <Step 
-                        stepNumber="2"
-                        icon={<Zap className="w-10 h-10" />}
-                        title="Lancez la recherche"
-                        description="Cliquez sur le bouton de recherche pour obtenir les informations en temps réel."
-                    />
-                    <Step 
-                        stepNumber="3"
-                        icon={<PackageCheck className="w-10 h-10" />}
-                        title="Suivez votre colis"
-                        description="Visualisez l'historique complet et le statut actuel de votre livraison."
-                    />
-                </div>
-            </div>
-        </section>
-
-        <section id="about" className="py-16 md:py-24 bg-secondary">
-          <div className="container px-4 md:px-6 max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-4">À propos de Colimove</h2>
-            <p className="text-muted-foreground md:text-lg">
-              Chez Colimove, notre mission est de rendre le suivi de colis plus transparent, simple et accessible pour tous. Nous croyons en la tranquillité d'esprit que procure le fait de savoir exactement où se trouve son colis à tout moment. C'est pourquoi nous avons créé une plateforme puissante et intuitive, conçue pour vous offrir une expérience de suivi inégalée, de l'expédition à la livraison.
-            </p>
-          </div>
-        </section>
-
       </main>
 
-      <footer className="w-full py-8 px-4 md:px-6 border-t bg-card">
-        <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
+      <footer className="w-full px-4 py-8 border-t bg-card md:px-6">
+        <div className="container flex flex-col items-center justify-between mx-auto md:flex-row">
             <div className="mb-4 md:mb-0">
-                <h3 className="text-xl font-bold text-primary">Colimove</h3>
+                 <Link href="/" className="flex items-center gap-2">
+                    <Package className="w-6 h-6 text-primary" />
+                    <span className="text-xl font-bold text-primary">Colimove</span>
+                </Link>
                 <p className="text-sm text-muted-foreground">Suivi de colis simple et rapide.</p>
             </div>
-            <nav className="flex gap-6 items-center">
-                <Link href="#features" className="text-sm font-medium hover:text-primary">Atouts</Link>
-                <Link href="#how-it-works" className="text-sm font-medium hover:text-primary">Fonctionnement</Link>
-                <Link href="#about" className="text-sm font-medium hover:text-primary">A propos</Link>
-            </nav>
-        </div>
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} Colimove. Tous droits réservés.</p>
+             <p className="text-sm text-muted-foreground">
+              &copy; {new Date().getFullYear()} Colimove. Tous droits réservés.
+            </p>
         </div>
       </footer>
     </div>

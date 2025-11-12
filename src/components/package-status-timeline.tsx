@@ -22,22 +22,22 @@ export function PackageStatusTimeline({ history }: PackageStatusTimelineProps) {
   const sortedHistory = history;
 
   return (
-    <div className="relative">
-      <div className="absolute left-5 top-0 h-full w-0.5 bg-border -translate-x-1/2" aria-hidden="true" />
+    <div className="relative pl-4">
+      <div className="absolute left-5 top-0 h-full w-0.5 bg-border/80 -translate-x-1/2" aria-hidden="true" />
       <ul className="space-y-8">
         {sortedHistory.map((item, index) => {
           const Icon = statusIcons[item.status] || Package;
           const isFirst = index === 0;
 
           return (
-            <li key={index} className="flex items-start space-x-4">
+            <li key={index} className="flex items-start space-x-6">
               <div className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full flex-shrink-0",
-                isFirst ? "bg-primary text-primary-foreground ring-4 ring-background" : "bg-muted text-muted-foreground"
+                "flex h-10 w-10 items-center justify-center rounded-full flex-shrink-0 ring-4 ring-background",
+                isFirst ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               )}>
                 <Icon className="h-5 w-5" />
               </div>
-              <div className="flex-grow pt-1.5">
+              <div className="flex-grow pt-1">
                 <p className={cn(
                   "font-semibold",
                   isFirst ? "text-primary" : "text-foreground"

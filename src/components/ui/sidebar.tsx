@@ -10,7 +10,7 @@ const Sidebar = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <aside
         ref={ref}
-        className={cn("h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border", className)}
+        className={cn("h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border shadow-lg", className)}
         {...props}
     />
 ))
@@ -36,7 +36,7 @@ const SidebarMenu = React.forwardRef<
     HTMLUListElement,
     React.HTMLAttributes<HTMLUListElement>
 >(({ className, ...props }, ref) => (
-    <ul ref={ref} className={cn("space-y-2 p-2", className)} {...props} />
+    <ul ref={ref} className={cn("space-y-1 p-2", className)} {...props} />
 ))
 SidebarMenu.displayName = "SidebarMenu"
 
@@ -63,7 +63,7 @@ const SidebarMenuButton = React.forwardRef<
     const buttonContent = (
          <Comp
             ref={ref}
-            className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground", className)}
+            className={cn("flex items-center gap-3 rounded-md px-3 py-2.5 text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&[aria-current='page']]:bg-sidebar-accent [&[aria-current='page']]:text-sidebar-accent-foreground [&[aria-current='page']]:font-semibold", className)}
             {...props}
         >
             {children}

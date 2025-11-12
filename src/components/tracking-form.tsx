@@ -37,11 +37,10 @@ export function TrackingForm() {
               <FormLabel className="sr-only">Code de suivi</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input 
-                    placeholder="Entrez votre numéro de suivi" 
+                    placeholder="Entrez votre numéro de suivi..." 
                     {...field} 
-                    className="h-14 pl-10 text-base"
+                    className="h-14 pl-5 text-base text-gray-800"
                     aria-label="Code de suivi"
                   />
                 </div>
@@ -52,12 +51,13 @@ export function TrackingForm() {
         />
         <Button 
             type="submit" 
-            className="h-14 !w-14"
-            size="icon"
+            className="h-14 !w-auto px-6 bg-accent hover:bg-accent/90"
+            size="lg"
             disabled={form.formState.isSubmitting}
             aria-label="Suivre"
         >
-          {form.formState.isSubmitting ? <ArrowRight className="h-5 w-5 animate-pulse" /> : <ArrowRight className="h-5 w-5" />}
+          <span>Suivre</span>
+          {form.formState.isSubmitting ? <ArrowRight className="h-5 w-5 ml-2 animate-pulse" /> : <ArrowRight className="h-5 w-5 ml-2" />}
         </Button>
       </form>
     </Form>

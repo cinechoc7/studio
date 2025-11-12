@@ -62,7 +62,7 @@ function DeletePackageDialog({ packageId }: { packageId: string }) {
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <button className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-destructive focus:bg-destructive/10">
+                <button className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-destructive hover:bg-destructive/10">
                    <Trash2 className="mr-2 h-4 w-4" />
                     <span>Supprimer</span>
                 </button>
@@ -113,12 +113,12 @@ export function PackageTable({ packages }: PackageTableProps) {
   
   if (packages.length === 0) {
     return (
-        <Card className="text-center p-12 border-dashed">
-             <div className="mx-auto bg-secondary w-16 h-16 rounded-full flex items-center justify-center">
-                <PackageIcon className="w-8 h-8 text-muted-foreground" />
+        <Card className="text-center p-12 border-dashed bg-secondary/30">
+             <div className="mx-auto bg-white w-20 h-20 rounded-full flex items-center justify-center shadow-md">
+                <PackageIcon className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="mt-4 text-lg font-semibold">Aucun colis pour le moment</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <h3 className="mt-6 text-xl font-bold text-primary">Aucun colis pour le moment</h3>
+            <p className="mt-2 text-base text-muted-foreground">
                 Commencez par créer un nouveau colis pour le voir apparaître ici.
             </p>
         </Card>
@@ -126,16 +126,12 @@ export function PackageTable({ packages }: PackageTableProps) {
   }
 
   return (
-    <Card>
-        <CardHeader>
-            <CardTitle>Liste des Colis</CardTitle>
-            <CardDescription>Gérez et suivez tous les colis de votre système.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <div className="border rounded-lg">
+    <Card className="shadow-lg">
+        <CardContent className="p-0">
+            <div className="overflow-x-auto">
                 <Table>
                     <TableHeader>
-                        <TableRow>
+                        <TableRow className="bg-secondary/50 hover:bg-secondary/50">
                         <TableHead>Code de Suivi</TableHead>
                         <TableHead>Destinataire</TableHead>
                         <TableHead>Destination</TableHead>
@@ -147,7 +143,7 @@ export function PackageTable({ packages }: PackageTableProps) {
                     <TableBody>
                         {packages.map((pkg) => (
                         <TableRow key={pkg.id} >
-                            <TableCell className="font-mono text-primary hover:underline cursor-pointer" onClick={() => handleViewDetails(pkg.id)}>{pkg.id}</TableCell>
+                            <TableCell className="font-mono text-primary hover:underline cursor-pointer font-semibold" onClick={() => handleViewDetails(pkg.id)}>{pkg.id}</TableCell>
                             <TableCell className="font-medium">{pkg.recipient.name}</TableCell>
                             <TableCell>{pkg.destination}</TableCell>
                             <TableCell>

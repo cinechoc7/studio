@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useActionState } from 'react';
+import { useFormState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,7 +32,7 @@ const initialState = {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+    <Button type="submit" disabled={pending} className="w-full sm:w-auto bg-accent hover:bg-accent/90">
       {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackagePlus className="mr-2 h-4 w-4" />}
       Créer le Colis
     </Button>
@@ -41,7 +41,7 @@ function SubmitButton() {
 
 export function AddPackageDialog() {
   const auth = useAuth();
-  const [state, formAction] = useActionState(createPackageAction, initialState);
+  const [state, formAction] = useFormState(createPackageAction, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -81,21 +81,6 @@ export function AddPackageDialog() {
         // Save to state and localStorage
         setLastSender(newSender);
         localStorage.setItem('lastSender', JSON.stringify(newSender));
-
-        // Reset only recipient and itinerary fields
-        const recipientName = formRef.current?.elements.namedItem('recipientName') as HTMLInputElement;
-        const recipientAddress = formRef.current?.elements.namedItem('recipientAddress') as HTMLInputElement;
-        const recipientEmail = formRef.current?.elements.namedItem('recipientEmail') as HTMLInputElement;
-        const recipientPhone = formRef.current?.elements.namedItem('recipientPhone') as HTMLInputElement;
-        const origin = formRef.current?.elements.namedItem('origin') as HTMLInputElement;
-        const destination = formRef.current?.elements.namedItem('destination') as HTMLInputElement;
-
-        if (recipientName) recipientName.value = '';
-        if (recipientAddress) recipientAddress.value = '';
-        if (recipientEmail) recipientEmail.value = '';
-        if (recipientPhone) recipientPhone.value = '';
-        if (origin) origin.value = '';
-        if (destination) destination.value = '';
         
         closeButtonRef.current?.click();
       }
@@ -105,14 +90,14 @@ export function AddPackageDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
+        <Button size="lg" className="bg-accent hover:bg-accent/90">
+          <PlusCircle className="mr-2 h-5 w-5" />
           Nouveau Colis
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"> <PackagePlus /> Créer un nouveau colis</DialogTitle>
+          <DialogTitle className="flex items-center gap-2 text-2xl text-primary"> <PackagePlus /> Créer un nouveau colis</DialogTitle>
           <DialogDescription>
             Remplissez les informations ci-dessous pour enregistrer un nouveau colis et générer son code de suivi.
           </DialogDescription>
@@ -121,8 +106,8 @@ export function AddPackageDialog() {
           <input type="hidden" name="idToken" value={idToken} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Building className="text-primary"/>Informations de l'Expéditeur</h3>
+            <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-primary"><Building className="text-accent"/>Informations de l'Expéditeur</h3>
               <div className="space-y-2">
                 <Label htmlFor="senderName">Nom Complet</Label>
                 <Input id="senderName" name="senderName" placeholder="Ex: John Doe" defaultValue={lastSender?.name} required />
@@ -146,8 +131,8 @@ export function AddPackageDialog() {
             </div>
 
             {/* Recipient Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><User className="text-primary"/>Informations du Destinataire</h3>
+            <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-primary"><User className="text-accent"/>Informations du Destinataire</h3>
               <div className="space-y-2">
                 <Label htmlFor="recipientName">Nom Complet</Label>
                 <Input id="recipientName" name="recipientName" placeholder="Ex: Jane Smith" required />
@@ -174,8 +159,8 @@ export function AddPackageDialog() {
           <Separator />
 
           {/* Itinerary Section */}
-          <div className="space-y-4">
-             <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><MapPin className="text-primary"/>Itinéraire</h3>
+          <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
+             <h3 className="text-lg font-semibold flex items-center gap-2 text-primary"><MapPin className="text-accent"/>Itinéraire</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="origin">Ville d'origine</Label>
@@ -190,7 +175,7 @@ export function AddPackageDialog() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-4">
             <DialogClose asChild>
                 <Button type="button" variant="outline" ref={closeButtonRef}>Annuler</Button>
             </DialogClose>
