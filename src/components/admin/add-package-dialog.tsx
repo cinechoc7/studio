@@ -48,7 +48,6 @@ export function AddPackageDialog() {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [lastSender, setLastSender] = useState<ContactInfo | null>(null);
-  const [idToken, setIdToken] = useState('');
 
   useEffect(() => {
     const savedSender = localStorage.getItem('lastSender');
@@ -56,12 +55,6 @@ export function AddPackageDialog() {
       setLastSender(JSON.parse(savedSender));
     }
   }, []);
-
-  useEffect(() => {
-    if (open && auth.currentUser) {
-        auth.currentUser.getIdToken(true).then(setIdToken);
-    }
-  }, [open, auth.currentUser]);
 
   useEffect(() => {
     if (state.message) {
@@ -104,7 +97,7 @@ export function AddPackageDialog() {
           </DialogDescription>
         </DialogHeader>
         <form ref={formRef} action={formAction} className="space-y-6 pt-4">
-          <input type="hidden" name="idToken" value={idToken} />
+          {auth.currentUser && <input type="hidden" name="adminId" value={auth.currentUser.uid} />}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
             <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">

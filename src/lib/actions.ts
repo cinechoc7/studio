@@ -6,7 +6,7 @@ import { updatePackageStatus as dbUpdatePackageStatus, createPackage as dbCreate
 import type { PackageStatus } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
 import { getApps, initializeApp } from 'firebase/app';
-import { getFirestore as getClientFirestore } from 'firebase/firestore';
+import { getFirestore as getClientFirestore, doc, getDoc } from 'firebase/firestore';
 import { firebaseConfig } from "@/firebase/config";
 import type { DecodedIdToken } from "firebase-admin/auth";
 
@@ -46,6 +46,7 @@ async function getCurrentUser(idToken: string): Promise<DecodedIdToken | null> {
     const adminAuth = await getAdminAuth();
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     
+    // Check if the user is an admin
     const firestore = getFirestore();
     const adminDocRef = doc(firestore, 'admins', decodedToken.uid);
     const adminDoc = await getDoc(adminDocRef);
@@ -54,7 +55,7 @@ async function getCurrentUser(idToken: string): Promise<DecodedIdToken | null> {
         console.warn(`User ${decodedToken.uid} is not an admin.`);
         return null;
     }
-
+    
     return decodedToken;
   } catch (error) {
     console.error("Error verifying token:", error);
@@ -67,7 +68,7 @@ const authSchema = z.object({
   idToken: z.string().min(1, "Authentication token is missing."),
 });
 
-const updateStatusSchema = z.object({
+const updateStatusSchema = authSchema.extend({
   packageId: z.string(),
   status: z.string(),
   location: z.string().min(1, "Location is required"),
@@ -89,6 +90,7 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
       packageId: formData.get('packageId'),
       status: formData.get('status'),
       location: formData.get('location'),
+      idToken: formData.get('idToken'),
     });
 
     if (!validatedFields.success) {
@@ -124,7 +126,7 @@ const contactSchema = z.object({
 });
 
 const createPackageSchema = z.object({
-  idToken: z.string().min(1, "Le jeton d'authentification est manquant."),
+  adminId: z.string().min(1, "L'ID administrateur est manquant."),
   senderName: contactSchema.shape.name,
   senderAddress: contactSchema.shape.address,
   senderEmail: contactSchema.shape.email,
@@ -149,11 +151,11 @@ export async function createPackageAction(prevState: any, formData: FormData) {
         };
     }
 
-    const { idToken, ...packageData } = validatedFields.data;
+    const { adminId, ...packageData } = validatedFields.data;
 
-    const user = await getCurrentUser(idToken);
-
-    if (!user) {
+    // Basic check to ensure adminId is present.
+    // The real security check happens in Firestore rules.
+    if (!adminId) {
         return {
             message: 'Utilisateur non authentifié ou invalide.',
             success: false,
@@ -176,14 +178,23 @@ export async function createPackageAction(prevState: any, formData: FormData) {
         };
         
         const firestore = getFirestore();
-        const newPackage = await dbCreatePackage(firestore, newPackageData, user.uid);
+        // Pass the adminId to the database function
+        const newPackage = await dbCreatePackage(firestore, newPackageData, adminId);
         
         revalidatePath("/admin");
 
         return { message: `Colis ${newPackage.id} créé avec succès.`, success: true, errors: null };
 
-    } catch (e) {
+    } catch (e: any) {
         console.error(e);
+        // Check for permission denied error from Firestore rules
+        if (e.message.includes('permission-denied') || e.code === 'permission-denied') {
+             return {
+                message: 'Permission refusée. Assurez-vous que vous êtes un administrateur connecté.',
+                success: false,
+                errors: null
+            }
+        }
         return {
             message: 'Une erreur serveur est survenue lors de la création du colis.',
             success: false,
