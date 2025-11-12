@@ -1,3 +1,4 @@
+
 import { TrackingForm } from '@/components/tracking-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,11 +90,11 @@ export default function Home() {
             </div>
              <div className="relative h-64 md:h-full md:flex items-center justify-center hidden">
                  <Image
-                    src="https://picsum.photos/seed/colimove/600/600"
-                    alt="3D illustration of a package in transit via multiple vehicles"
+                    src="https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHwlMjBDT0xJU3xlbnwwfHx8fDE3NjI5NjgxODF8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                    alt="Person holding a package"
                     width={600}
                     height={600}
-                    className="object-contain animate-pulse-slow"
+                    className="object-cover rounded-xl shadow-2xl"
                     data-ai-hint="package transit"
                     priority
                 />
