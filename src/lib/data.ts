@@ -16,10 +16,9 @@ import {
   Timestamp,
   Firestore,
   where,
-  getApps,
-  initializeApp,
   getFirestore,
 } from 'firebase/firestore';
+import { getApps, initializeApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
 
 // Custom event dispatcher to notify about package updates
