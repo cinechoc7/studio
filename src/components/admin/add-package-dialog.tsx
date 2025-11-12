@@ -45,7 +45,7 @@ export function AddPackageDialog() {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const [idToken, setIdToken] = useState('');
+  const [open, setOpen] = useState(false);
   const [lastSender, setLastSender] = useState<ContactInfo | null>(null);
 
   useEffect(() => {
@@ -56,11 +56,28 @@ export function AddPackageDialog() {
     }
   }, []);
 
-  useEffect(() => {
+  const handleFormAction = async (formData: FormData) => {
     if (auth.currentUser) {
-        auth.currentUser.getIdToken().then(setIdToken);
+        try {
+            const token = await auth.currentUser.getIdToken(true); // Force refresh token
+            formData.set('idToken', token);
+            formAction(formData);
+        } catch (error) {
+            console.error("Error getting id token", error);
+             toast({
+                title: 'Erreur d\'authentification',
+                description: 'Impossible de vérifier votre session. Veuillez vous reconnecter.',
+                variant: 'destructive',
+            });
+        }
+    } else {
+         toast({
+            title: 'Erreur d\'authentification',
+            description: 'Vous n\'êtes pas connecté.',
+            variant: 'destructive',
+        });
     }
-  }, [auth.currentUser]);
+  }
 
   useEffect(() => {
     if (state.message) {
@@ -83,12 +100,14 @@ export function AddPackageDialog() {
         localStorage.setItem('lastSender', JSON.stringify(newSender));
         
         closeButtonRef.current?.click();
+        formRef.current?.reset();
+        setOpen(false);
       }
     }
   }, [state, toast]);
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="lg" className="bg-primary hover:bg-primary/90">
           <PlusCircle className="mr-2 h-5 w-5" />
@@ -102,8 +121,7 @@ export function AddPackageDialog() {
             Remplissez les informations ci-dessous pour enregistrer un nouveau colis et générer son code de suivi.
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} action={formAction} className="space-y-6 pt-4">
-          <input type="hidden" name="idToken" value={idToken} />
+        <form ref={formRef} action={handleFormAction} className="space-y-6 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
             <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
