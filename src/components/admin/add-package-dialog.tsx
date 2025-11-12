@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useActionState, useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -43,6 +43,13 @@ export function AddPackageDialog() {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [idToken, setIdToken] = useState('');
+
+  useEffect(() => {
+    if (auth.currentUser) {
+        auth.currentUser.getIdToken().then(setIdToken);
+    }
+  }, [auth.currentUser]);
 
   useEffect(() => {
     if (state.message) {
@@ -57,21 +64,6 @@ export function AddPackageDialog() {
       }
     }
   }, [state, toast]);
-
-  const handleFormAction = async (formData: FormData) => {
-    const user = auth.currentUser;
-    if (user) {
-        const idToken = await user.getIdToken();
-        formData.append('idToken', idToken);
-        formAction(formData);
-    } else {
-         toast({
-            title: 'Erreur',
-            description: 'Utilisateur non authentifié. Veuillez vous reconnecter.',
-            variant: 'destructive',
-        });
-    }
-  };
 
   return (
     <Dialog>
@@ -88,8 +80,8 @@ export function AddPackageDialog() {
             Remplissez les informations ci-dessous pour enregistrer un nouveau colis et générer son code de suivi.
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} action={handleFormAction} className="space-y-6 pt-4">
-          
+        <form ref={formRef} action={formAction} className="space-y-6 pt-4">
+          <input type="hidden" name="idToken" value={idToken} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
             <div className="space-y-4">
