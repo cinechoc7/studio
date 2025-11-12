@@ -29,6 +29,7 @@ import {
 import { deletePackage as deletePackageAction } from "@/lib/data";
 import { useTransition } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore } from "@/firebase";
 
 type PackageTableProps = {
   packages: Package[];
@@ -37,10 +38,11 @@ type PackageTableProps = {
 function DeletePackageDialog({ packageId }: { packageId: string }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
+    const firestore = useFirestore();
     
     const handleDelete = () => {
         startTransition(async () => {
-            const success = await deletePackageAction(packageId);
+            const success = await deletePackageAction(firestore, packageId);
             if (success) {
                 toast({
                     title: "Colis supprimé",

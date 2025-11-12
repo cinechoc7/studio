@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Package, PackageStatus, ContactInfo } from './types';
-import { useAuth, useFirestore, useCollection } from '@/firebase';
+import { useAuth, useFirestore, useCollection, initializeFirebase } from '@/firebase';
 import {
   collection,
   doc,
@@ -14,6 +14,7 @@ import {
   query,
   orderBy,
   Timestamp,
+  Firestore,
 } from 'firebase/firestore';
 
 // Custom event dispatcher to notify about package updates
@@ -60,8 +61,7 @@ export function usePackages() {
 }
 
 
-export async function getPackageById(id: string): Promise<Package | undefined> {
-    const firestore = useFirestore();
+export async function getPackageById(firestore: Firestore, id: string): Promise<Package | undefined> {
     const docRef = doc(firestore, "packages", id);
     try {
         const docSnap = await getDoc(docRef);
@@ -78,8 +78,7 @@ export async function getPackageById(id: string): Promise<Package | undefined> {
     }
 }
 
-export async function createPackage(pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
-    const firestore = useFirestore();
+export async function createPackage(firestore: Firestore, pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
     const packagesCollection = collection(firestore, 'packages');
     
     const statusHistory = [{
@@ -106,30 +105,33 @@ export async function createPackage(pkgData: Omit<Package, 'id' | 'currentStatus
     }
 }
 
-export async function updatePackageStatus(id: string, newStatus: PackageStatus, location: string): Promise<Package | null> {
-    const firestore = useFirestore();
+export async function updatePackageStatus(firestore: Firestore, id: string, newStatus: PackageStatus, location: string): Promise<Package | null> {
     const docRef = doc(firestore, 'packages', id);
-    
+
     try {
         const docSnap = await getDoc(docRef);
         if (!docSnap.exists()) {
             return null;
         }
 
-        const currentPackage = docSnap.data() as Package;
-        const newStatusHistory = {
+        const currentPackageData = docSnap.data();
+        
+        // Ensure statusHistory is an array
+        const currentPackageStatusHistory = Array.isArray(currentPackageData.statusHistory) ? currentPackageData.statusHistory : [];
+
+        const newStatusHistoryEntry = {
             status: newStatus,
             location,
             timestamp: new Date(),
         };
 
-        const updatedHistory = [newStatusHistory, ...currentPackage.statusHistory];
+        const updatedHistory = [newStatusHistoryEntry, ...currentPackageStatusHistory];
 
         await updateDoc(docRef, {
             currentStatus: newStatus,
             statusHistory: updatedHistory,
         });
-
+        
         window.dispatchEvent(packageUpdateEvent);
         const updatedDoc = await getDoc(docRef);
         return { id: updatedDoc.id, ...convertTimestamps(updatedDoc.data()) } as Package;
@@ -140,8 +142,8 @@ export async function updatePackageStatus(id: string, newStatus: PackageStatus, 
     }
 }
 
-export async function deletePackage(id: string): Promise<boolean> {
-    const firestore = useFirestore();
+
+export async function deletePackage(firestore: Firestore, id: string): Promise<boolean> {
     const docRef = doc(firestore, "packages", id);
     try {
         await deleteDoc(docRef);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useFirestore } from "@/lib/data";
+import { useFirestore } from "@/firebase";
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -34,7 +34,8 @@ function convertTimestamps(data: any): any {
 
 export default function TrackingPage({ params }: TrackingPageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
-  const packageId = use(params).id.toUpperCase();
+  const { id } = use(params);
+  const packageId = id.toUpperCase();
   const firestore = useFirestore();
 
   useEffect(() => {

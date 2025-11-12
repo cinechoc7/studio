@@ -1,5 +1,5 @@
 'use client';
-import { getPackageById, useFirestore } from "@/lib/data";
+import { useFirestore } from "@/firebase";
 import {
   Card,
   CardContent,
@@ -40,7 +40,7 @@ function convertTimestamps(data: any): any {
 
 export default function AdminPackagePage({ params }: AdminPackagePageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
-  const packageId = use(params).id;
+  const { id: packageId } = use(params);
   const firestore = useFirestore();
   
   useEffect(() => {

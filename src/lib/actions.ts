@@ -12,6 +12,7 @@ import { FirebaseError } from "firebase/app";
 import { firebaseConfig } from "@/firebase/config";
 import { initializeApp, getApps } from 'firebase/app';
 import { DecodedIdToken } from "firebase-admin/auth";
+import { getFirestore as getClientFirestore } from 'firebase/firestore';
 
 // Helper to get admin SDK
 async function getAdminAuth() {
@@ -31,6 +32,14 @@ async function getAdminAuth() {
     });
   }
   return getAdminAuth();
+}
+
+// Helper to get client SDK firestore instance
+function getFirestore() {
+    if (!getApps().length) {
+        initializeApp(firebaseConfig);
+    }
+    return getClientFirestore(getApps()[0]);
 }
 
 
@@ -72,8 +81,8 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
     }
     
     const { packageId, status, location } = validatedFields.data;
-
-    await dbUpdatePackageStatus(packageId, status as PackageStatus, location);
+    const firestore = getFirestore();
+    await dbUpdatePackageStatus(firestore, packageId, status as PackageStatus, location);
 
     revalidatePath("/admin");
     revalidatePath(`/admin/package/${packageId}`);
@@ -143,8 +152,9 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             origin,
             destination,
         };
-
-        const newPackage = await dbCreatePackage(newPackageData, user.uid);
+        
+        const firestore = getFirestore();
+        const newPackage = await dbCreatePackage(firestore, newPackageData, user.uid);
         
         revalidatePath("/admin");
 
