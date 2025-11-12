@@ -89,12 +89,12 @@ export default function Home() {
             </div>
              <div className="relative h-64 md:h-full md:flex items-center justify-center hidden">
                  <Image
-                    src="https://picsum.photos/seed/package3d/600/600"
-                    alt="3D illustration of packages"
+                    src="https://picsum.photos/seed/colimove/600/600"
+                    alt="3D illustration of a package in transit via multiple vehicles"
                     width={600}
                     height={600}
                     className="object-contain animate-pulse-slow"
-                    data-ai-hint="3d package illustration"
+                    data-ai-hint="package transit"
                     priority
                 />
             </div>
