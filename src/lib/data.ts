@@ -6,55 +6,7 @@ import { useAuth } from '@/firebase';
 
 // This is a mock in-memory store.
 // In a real app, you would use a database like Firestore.
-let packages: Package[] = [
-  {
-    id: 'CS123456789FR',
-    sender: {
-        name: 'Expéditeur SA',
-        address: '123 Rue de la Logistique, 75001 Paris, France',
-        email: 'contact@expediteur.fr',
-        phone: '0123456789'
-    },
-    recipient: {
-        name: 'Jean Dupont',
-        address: '456 Avenue du Soleil, 13008 Marseille, France',
-        email: 'jean.dupont@email.com',
-        phone: '0612345678'
-    },
-    origin: 'Paris, France',
-    destination: 'Marseille, France',
-    currentStatus: 'En cours d\'acheminement',
-    statusHistory: [
-      { status: 'Pris en charge', location: 'Entrepôt Paris', timestamp: new Date('2024-07-21T10:00:00Z') },
-      { status: 'En cours d\'acheminement', location: 'Centre de tri, Lyon', timestamp: new Date('2024-07-22T08:30:00Z') },
-    ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
-  },
-  {
-    id: 'CS987654321CA',
-    sender: {
-        name: 'Tech Innov',
-        address: '789 Boulevard de l\'Innovation, 69002 Lyon, France',
-        email: 'sales@techinnov.com',
-        phone: '0472000000'
-    },
-    recipient: {
-        name: 'Marie Curie',
-        address: '101 Rue de la Science, 59000 Lille, France',
-        email: 'marie.curie@labo.com',
-        phone: '0787654321'
-    },
-    origin: 'Lyon, France',
-    destination: 'Lille, France',
-    currentStatus: 'Livré',
-    statusHistory: [
-      { status: 'Pris en charge', location: 'Entrepôt Lyon', timestamp: new Date('2024-07-18T16:20:00Z') },
-      { status: 'En cours d\'acheminement', location: 'Centre de tri, Paris', timestamp: new Date('2024-07-19T11:00:00Z') },
-      { status: 'Arrivé au hub de distribution', location: 'Hub de Lille', timestamp: new Date('2024-07-20T09:00:00Z') },
-      { status: 'En cours de livraison', location: 'Lille', timestamp: new Date('2024-07-20T10:15:00Z') },
-      { status: 'Livré', location: 'Lille, France', timestamp: new Date('2024-07-20T13:45:00Z') },
-    ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
-  },
-];
+let packages: Package[] = [];
 
 // Custom event dispatcher to notify about package updates
 const packageUpdateEvent = new Event('packagesUpdated');
