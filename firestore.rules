@@ -18,12 +18,18 @@ service cloud.firestore {
     }
 
     match /packages/{packageId} {
-      allow read: if isSignedIn() && resource.data.adminId == request.auth.uid;
-      // This rule allows a user to list packages if the query includes a `where` clause
-      // that filters by their own adminId. This secures the query.
-      allow list: if isSignedIn() && request.query.filters.map(f => f.field.string() == 'adminId' && f.op == '==' && f.value == request.auth.uid).hasAny([true]);
-      allow create: if isSignedIn() && request.resource.data.adminId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.adminId == request.auth.uid;
+      // Allow read access to a package if the user is an admin and their UID matches the package's adminId
+      allow read: if isSignedIn() && isAdmin() && resource.data.adminId == request.auth.uid;
+
+      // Allow an admin to list packages, but only if their query specifically filters by their own adminId.
+      // This prevents listing all packages and enforces querying for their own data.
+      allow list: if isSignedIn() && isAdmin() && request.query.filters.map(f => f.field.string() == 'adminId' && f.op == '==' && f.value == request.auth.uid).hasAny([true]);
+      
+      // Allow an admin to create a package if the new package's adminId is their own UID.
+      allow create: if isSignedIn() && isAdmin() && request.resource.data.adminId == request.auth.uid;
+      
+      // Allow an admin to update or delete a package if the existing package's adminId is their own UID.
+      allow update, delete: if isSignedIn() && isAdmin() && resource.data.adminId == request.auth.uid;
     }
     
     match /admins/{adminId} {
@@ -31,8 +37,10 @@ service cloud.firestore {
     }
 
     match /package_statuses/{packageStatusId} {
+      // Publicly readable for tracking purposes
       allow read: if true;
-      allow create, update, delete: if isSignedIn() && isAdmin();
+      // Only admins can create, update, or delete statuses
+      allow write: if isSignedIn() && isAdmin();
     }
   }
 }
