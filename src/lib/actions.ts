@@ -24,6 +24,7 @@ async function getAdminAuth() {
     throw new Error('Missing FIREBASE_SERVICE_ACCOUNT for admin operations.');
   }
 
+  // Initialize app if not already initialized
   if (!admin.apps.length) {
     admin.initializeApp({
       credential: cert(JSON.parse(serviceAccount)),
@@ -34,10 +35,8 @@ async function getAdminAuth() {
 
 
 // Helper to get current user on server
-async function getCurrentUser(): Promise<DecodedIdToken | null> {
-  const authorization = headers().get("Authorization");
-  if (authorization?.startsWith("Bearer ")) {
-    const idToken = authorization.split("Bearer ")[1];
+async function getCurrentUser(idToken: string): Promise<DecodedIdToken | null> {
+  if (idToken) {
     try {
         const adminAuth = await getAdminAuth();
         const decodedToken = await adminAuth.verifyIdToken(idToken);
@@ -90,10 +89,11 @@ const contactSchema = z.object({
     name: z.string().min(2, "Le nom est requis."),
     address: z.string().min(5, "L'adresse est requise."),
     email: z.string().email("L'email est invalide.").optional().or(z.literal('')),
-    phone: z.string().min(10, "Le téléphone est requis.").optional().or(z.literal('')),
+    phone: z.string().optional().or(z.literal('')),
 });
 
 const createPackageSchema = z.object({
+  idToken: z.string(),
   senderName: contactSchema.shape.name,
   senderAddress: contactSchema.shape.address,
   senderEmail: contactSchema.shape.email,
@@ -108,10 +108,19 @@ const createPackageSchema = z.object({
 
 export async function createPackageAction(prevState: any, formData: FormData) {
     
-    if (!getApps().length) {
-        initializeApp(firebaseConfig);
+    const validatedFields = createPackageSchema.safeParse(Object.fromEntries(formData.entries()));
+
+    if (!validatedFields.success) {
+        return {
+            message: 'Données du formulaire invalides.',
+            errors: validatedFields.error.flatten().fieldErrors,
+            success: false,
+        };
     }
-    const user = getAuth().currentUser;
+
+    const { idToken, ...packageData } = validatedFields.data;
+
+    const user = await getCurrentUser(idToken);
 
     if (!user) {
         return {
@@ -122,21 +131,11 @@ export async function createPackageAction(prevState: any, formData: FormData) {
     }
     
     try {
-        const validatedFields = createPackageSchema.safeParse(Object.fromEntries(formData.entries()));
-
-        if (!validatedFields.success) {
-            return {
-                message: 'Données du formulaire invalides.',
-                errors: validatedFields.error.flatten().fieldErrors,
-                success: false,
-            };
-        }
-
         const { 
             senderName, senderAddress, senderEmail, senderPhone,
             recipientName, recipientAddress, recipientEmail, recipientPhone,
             origin, destination
-        } = validatedFields.data;
+        } = packageData;
 
         const newPackageData = {
             sender: { name: senderName, address: senderAddress, email: senderEmail, phone: senderPhone },

@@ -19,6 +19,7 @@ import { createPackageAction } from '@/lib/actions';
 import { Loader2, PlusCircle, User, Mail, Phone, MapPin, Building, PackagePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
+import { useAuth } from '@/firebase';
 
 const initialState = {
   message: '',
@@ -37,6 +38,7 @@ function SubmitButton() {
 }
 
 export function AddPackageDialog() {
+  const auth = useAuth();
   const [state, formAction] = useActionState(createPackageAction, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -50,12 +52,26 @@ export function AddPackageDialog() {
         variant: state.success ? 'default' : 'destructive',
       });
       if (state.success) {
-        // We no longer reset the form automatically
-        // formRef.current?.reset();
+        formRef.current?.reset();
         closeButtonRef.current?.click();
       }
     }
   }, [state, toast]);
+
+  const handleFormAction = async (formData: FormData) => {
+    const user = auth.currentUser;
+    if (user) {
+        const idToken = await user.getIdToken();
+        formData.append('idToken', idToken);
+        formAction(formData);
+    } else {
+         toast({
+            title: 'Erreur',
+            description: 'Utilisateur non authentifié. Veuillez vous reconnecter.',
+            variant: 'destructive',
+        });
+    }
+  };
 
   return (
     <Dialog>
@@ -72,7 +88,7 @@ export function AddPackageDialog() {
             Remplissez les informations ci-dessous pour enregistrer un nouveau colis et générer son code de suivi.
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} action={formAction} className="space-y-6 pt-4">
+        <form ref={formRef} action={handleFormAction} className="space-y-6 pt-4">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
