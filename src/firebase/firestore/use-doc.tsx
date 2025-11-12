@@ -71,13 +71,11 @@ export function useDoc<T = any>(
         setError(null); // Clear any previous error on successful snapshot (even if doc doesn't exist)
         setIsLoading(false);
       },
-      async (error: FirestoreError) => {
-        const contextualError = new FirestorePermissionError({
+      async (serverError: FirestoreError) => {
+        const contextualError = await new FirestorePermissionError({
           operation: 'get',
           path: memoizedDocRef.path,
-        });
-
-        await contextualError.initialize();
+        }, serverError).ready();
 
         setError(contextualError)
         setData(null)

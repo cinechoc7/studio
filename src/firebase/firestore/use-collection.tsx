@@ -96,8 +96,7 @@ export function useCollection<T = any>(
             path,
         };
         
-        const contextualError = new FirestorePermissionError(context, serverError);
-        await contextualError.initialize(context);
+        const contextualError = await new FirestorePermissionError(context, serverError).ready();
 
         setError(contextualError)
         setData(null)

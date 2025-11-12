@@ -1,7 +1,5 @@
 'use client';
 import { getAuth, type User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { getFirestore } from 'firebase/firestore';
 
 export type SecurityRuleContext = {
   path: string;
@@ -113,18 +111,18 @@ ${JSON.stringify(requestObject, null, 2)}`;
  */
 export class FirestorePermissionError extends Error {
   public request: SecurityRuleRequest | null = null;
+  private initializationPromise: Promise<void>;
 
   constructor(context: SecurityRuleContext, serverError?: Error) {
-    // This initial message is a fallback. The async init will set the detailed one.
     super(serverError?.message || 'Firestore permission error occurred.');
     this.name = 'FirebaseError';
+    this.initializationPromise = this.initialize(context);
   }
   
   /**
    * Asynchronously initializes the error with full context.
-   * This MUST be called and awaited right after instantiating the error.
    */
-  async initialize(context: SecurityRuleContext) {
+  private async initialize(context: SecurityRuleContext): Promise<void> {
     try {
       const requestObject = await buildRequestObject(context);
       this.request = requestObject;
@@ -133,5 +131,13 @@ export class FirestorePermissionError extends Error {
        console.error("Failed to build detailed permission error:", e);
        // The message will fall back to the one set in the constructor
     }
+  }
+
+  /**
+   * Ensures that the async initialization is complete before the error is used.
+   */
+  public async ready(): Promise<this> {
+    await this.initializationPromise;
+    return this;
   }
 }
