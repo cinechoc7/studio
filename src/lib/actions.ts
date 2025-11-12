@@ -17,37 +17,6 @@ const adminAuth = getAdminAuth();
 const firestore = getAdminFirestore();
 // --- END: Firebase Admin SDK Initialization ---
 
-async function dbCreatePackage(
-    firestore: any, // Using 'any' to accommodate Firebase Admin SDK
-    packageId: string,
-    pkgData: Omit<any, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>,
-    adminId: string
-): Promise<void> {
-
-    const docRef = firestore.collection('packages').doc(packageId);
-
-    const docSnap = await docRef.get();
-    if (docSnap.exists()) {
-        throw new Error(`Le colis avec le code "${packageId}" existe déjà.`);
-    }
-
-    const statusHistory = [{
-        status: 'Pris en charge',
-        location: pkgData.origin,
-        timestamp: FieldValue.serverTimestamp(), // Use Admin SDK's serverTimestamp
-    }];
-
-    const newPackageData = {
-        ...pkgData,
-        adminId: adminId,
-        currentStatus: 'Pris en charge' as PackageStatus,
-        statusHistory: statusHistory,
-        createdAt: FieldValue.serverTimestamp() // Use Admin SDK's serverTimestamp
-    };
-    
-    await docRef.set(newPackageData);
-}
-
 
 const updateStatusSchema = z.object({
   packageId: z.string(),
@@ -157,14 +126,31 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             origin, destination
         } = validatedFields.data;
 
+        const docRef = firestore.collection('packages').doc(packageId);
+
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+            throw new Error(`Le colis avec le code "${packageId}" existe déjà.`);
+        }
+
+        const statusHistory = [{
+            status: 'Pris en charge',
+            location: origin,
+            timestamp: FieldValue.serverTimestamp(),
+        }];
+
         const newPackageData = {
             sender: { name: senderName, address: senderAddress, email: senderEmail || undefined, phone: senderPhone || undefined },
             recipient: { name: recipientName, address: recipientAddress, email: recipientEmail || undefined, phone: recipientPhone || undefined },
             origin,
             destination,
+            adminId: adminId,
+            currentStatus: 'Pris en charge' as PackageStatus,
+            statusHistory: statusHistory,
+            createdAt: FieldValue.serverTimestamp()
         };
         
-        await dbCreatePackage(firestore, packageId, newPackageData, adminId);
+        await docRef.set(newPackageData);
         
         revalidatePath("/admin");
         revalidatePath(`/tracking/${packageId}`);

@@ -143,37 +143,6 @@ export async function getPackageById(firestore: Firestore, id: string): Promise<
     }
 }
 
-export async function createPackage(
-    firestore: Firestore,
-    packageId: string,
-    pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>,
-    adminId: string
-): Promise<void> {
-
-    const docRef = doc(firestore, 'packages', packageId);
-
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        throw new Error(`Le colis avec le code "${packageId}" existe déjà.`);
-    }
-
-    const statusHistory = [{
-        status: 'Pris en charge',
-        location: pkgData.origin,
-        timestamp: serverTimestamp(), // Use serverTimestamp for client-side
-    }];
-
-    const newPackageData = {
-        ...pkgData,
-        adminId: adminId,
-        currentStatus: 'Pris en charge' as PackageStatus,
-        statusHistory: statusHistory,
-        createdAt: serverTimestamp() // Use serverTimestamp for client-side
-    };
-    
-    await setDoc(docRef, newPackageData);
-}
-
 
 export async function deletePackage(firestore: any, id: string): Promise<boolean> {
     const docRef = firestore.collection("packages").doc(id);

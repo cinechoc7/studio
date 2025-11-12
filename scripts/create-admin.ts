@@ -3,7 +3,10 @@
 // 2. Make sure your `.env.local` file has the `FIREBASE_SERVICE_ACCOUNT` variable set.
 // 3. Run `tsx scripts/create-admin.ts` from your project root.
 
-import { initializeApp } from 'firebase/app';
+import { initializeApp as initializeAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
+import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseConfig } from '../src/firebase/config';
@@ -20,9 +23,16 @@ async function createAdminUser() {
   console.log(`Attempting to create admin user: ${email}...`);
 
   // We need to initialize a client-side app to use client SDK for user creation
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const firestore = getFirestore(app);
+  if (!getApps().length) {
+    initializeApp(firebaseConfig);
+  }
+  const auth = getAuth();
+  
+  // We need to initialize the admin app to write to Firestore with admin privileges
+  if(!getAdminApps().length) {
+    initializeAdminApp();
+  }
+  const adminFirestore = getAdminFirestore();
 
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -31,18 +41,18 @@ async function createAdminUser() {
 
     // Now, let's mark this user as an admin in Firestore in two places
     // 1. The 'admins' collection for general user info
-    const adminInfoDocRef = doc(firestore, 'admins', user.uid);
-    await setDoc(adminInfoDocRef, {
+    const adminInfoDocRef = adminFirestore.collection('admins').doc(user.uid);
+    await adminInfoDocRef.set({
       email: user.email,
-      createdAt: serverTimestamp()
+      createdAt: FieldValue.serverTimestamp()
     });
     console.log(`Successfully created admin info doc for ${user.uid}.`);
     
     // 2. The 'roles_admin' collection to grant the admin role for security rules.
-    const adminRoleDocRef = doc(firestore, 'roles_admin', user.uid);
-    await setDoc(adminRoleDocRef, {
+    const adminRoleDocRef = adminFirestore.collection('roles_admin').doc(user.uid);
+    await adminRoleDocRef.set({
         isAdmin: true,
-        grantedAt: serverTimestamp()
+        grantedAt: FieldValue.serverTimestamp()
     });
     console.log(`Successfully granted admin role to ${user.uid} in 'roles_admin' collection.`);
 
