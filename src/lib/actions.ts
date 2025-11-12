@@ -5,9 +5,8 @@ import { z } from "zod";
 import { updatePackageStatus as dbUpdatePackageStatus, createPackage as dbCreatePackage, deletePackage as dbDeletePackage } from "./data";
 import type { PackageStatus } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
-import { auth } from "firebase-admin";
 import { getApps, initializeApp } from 'firebase/app';
-import { getFirestore as getClientFirestore } from 'firebase/firestore';
+import { getFirestore as getClientFirestore } from 'firestore.rules';
 import { firebaseConfig } from "@/firebase/config";
 import type { DecodedIdToken } from "firebase-admin/auth";
 
@@ -45,7 +44,16 @@ async function getCurrentUser(idToken: string): Promise<DecodedIdToken | null> {
   if (!idToken) return null;
   try {
     const adminAuth = await getAdminAuth();
-    return await adminAuth.verifyIdToken(idToken);
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    
+    // Check if user is an admin
+    const adminDoc = await getFirestore().collection('admins').doc(decodedToken.uid).get();
+    if (!adminDoc.exists) {
+        console.warn(`User ${decodedToken.uid} is not an admin.`);
+        return null;
+    }
+
+    return decodedToken;
   } catch (error) {
     console.error("Error verifying token:", error);
     return null;
@@ -115,7 +123,6 @@ const contactSchema = z.object({
 
 const createPackageSchema = z.object({
   idToken: z.string().min(1, "Le jeton d'authentification est manquant."),
-  adminId: z.string().min(1, "L'ID de l'administrateur est manquant."),
   senderName: contactSchema.shape.name,
   senderAddress: contactSchema.shape.address,
   senderEmail: contactSchema.shape.email,
@@ -140,11 +147,11 @@ export async function createPackageAction(prevState: any, formData: FormData) {
         };
     }
 
-    const { idToken, adminId, ...packageData } = validatedFields.data;
+    const { idToken, ...packageData } = validatedFields.data;
 
     const user = await getCurrentUser(idToken);
 
-    if (!user || user.uid !== adminId) {
+    if (!user) {
         return {
             message: 'Utilisateur non authentifié ou invalide.',
             success: false,

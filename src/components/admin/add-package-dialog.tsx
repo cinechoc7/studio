@@ -105,7 +105,6 @@ export function AddPackageDialog() {
         </DialogHeader>
         <form ref={formRef} action={formAction} className="space-y-6 pt-4">
           <input type="hidden" name="idToken" value={idToken} />
-          <input type="hidden" name="adminId" value={auth.currentUser?.uid || ''} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
             <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
