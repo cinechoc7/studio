@@ -1,6 +1,8 @@
 import { TrackingForm } from '@/components/tracking-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PackageSearch } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
   return (
@@ -24,6 +26,9 @@ export default function Home() {
         </Card>
         <footer className="mt-8 text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} Colis Suivi Pro. Tous droits réservés.</p>
+          <Button asChild variant="link" className="text-primary">
+            <Link href="/login">Espace Admin</Link>
+          </Button>
         </footer>
       </div>
     </main>
