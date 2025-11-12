@@ -1,8 +1,8 @@
-"use server";
+'use server';
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { updatePackageStatus as dbUpdatePackageStatus, createPackage as dbCreatePackage } from "./data";
+import { updatePackageStatus as dbUpdatePackageStatus, createPackage as dbCreatePackage, deletePackage as dbDeletePackage } from "./data";
 import type { PackageStatus, ContactInfo } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
 
@@ -100,6 +100,34 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             success: false,
             errors: null
         }
+    }
+}
+
+const deletePackageSchema = z.object({
+    packageId: z.string(),
+});
+
+export async function deletePackageAction(formData: FormData) {
+    try {
+        const validatedFields = deletePackageSchema.safeParse({
+            packageId: formData.get('packageId'),
+        });
+
+        if (!validatedFields.success) {
+            // This case should ideally not happen with form actions, but it's good practice.
+            console.error('Invalid form data for deletion:', validatedFields.error);
+            return;
+        }
+
+        const { packageId } = validatedFields.data;
+
+        await dbDeletePackage(packageId);
+
+        revalidatePath("/admin");
+
+    } catch (e) {
+        console.error('Server error during package deletion:', e);
+        // In a real app, you might want to return an error state to the UI
     }
 }
 

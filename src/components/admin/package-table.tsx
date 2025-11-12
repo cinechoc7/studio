@@ -11,18 +11,71 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MoreHorizontal, Package as PackageIcon } from "lucide-react";
+import { MoreHorizontal, Package as PackageIcon, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { deletePackageAction } from "@/lib/actions";
+import { useTransition } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 type PackageTableProps = {
   packages: Package[];
 };
 
+function DeletePackageDialog({ packageId, onDeleted }: { packageId: string, onDeleted: () => void }) {
+    const [isPending, startTransition] = useTransition();
+    
+    const handleDelete = () => {
+        startTransition(async () => {
+            const formData = new FormData();
+            formData.append('packageId', packageId);
+            await deletePackageAction(formData);
+            onDeleted();
+        });
+    };
+
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <button className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-destructive focus:bg-destructive/10">
+                   <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Supprimer</span>
+                </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Cette action est irréversible. Le colis <span className="font-mono text-foreground font-semibold">{packageId}</span> sera définitivement supprimé.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90" disabled={isPending}>
+                        {isPending ? "Suppression..." : "Oui, supprimer"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+}
+
+
 export function PackageTable({ packages }: PackageTableProps) {
   const router = useRouter();
+  const { toast } = useToast();
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -44,6 +97,14 @@ export function PackageTable({ packages }: PackageTableProps) {
 
   const handleViewDetails = (id: string) => {
     router.push(`/admin/package/${id}`);
+  };
+
+  const onPackageDeleted = () => {
+    toast({
+        title: "Colis supprimé",
+        description: "Le colis a été supprimé avec succès.",
+    });
+    // The revalidation will refresh the package list
   };
   
   if (packages.length === 0) {
@@ -81,8 +142,8 @@ export function PackageTable({ packages }: PackageTableProps) {
                     </TableHeader>
                     <TableBody>
                         {packages.map((pkg) => (
-                        <TableRow key={pkg.id} className="cursor-pointer" onClick={() => handleViewDetails(pkg.id)}>
-                            <TableCell className="font-mono text-primary hover:underline">{pkg.id}</TableCell>
+                        <TableRow key={pkg.id} >
+                            <TableCell className="font-mono text-primary hover:underline cursor-pointer" onClick={() => handleViewDetails(pkg.id)}>{pkg.id}</TableCell>
                             <TableCell className="font-medium">{pkg.recipient.name}</TableCell>
                             <TableCell>{pkg.destination}</TableCell>
                             <TableCell>
@@ -90,8 +151,22 @@ export function PackageTable({ packages }: PackageTableProps) {
                             </TableCell>
                             <TableCell className="hidden md:table-cell">{new Date(pkg.statusHistory[0].timestamp).toLocaleDateString('fr-FR')}</TableCell>
                             <TableCell className="text-right">
-                               <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                               <span className="sr-only">Voir les détails</span>
+                               <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                            <span className="sr-only">Ouvrir le menu</span>
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuItem onClick={() => handleViewDetails(pkg.id)}>
+                                            Voir les détails
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DeletePackageDialog packageId={pkg.id} onDeleted={onPackageDeleted} />
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </TableCell>
                         </TableRow>
                         ))}

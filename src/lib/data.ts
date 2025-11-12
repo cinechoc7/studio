@@ -21,7 +21,7 @@ export function usePackages() {
     useEffect(() => {
         const fetchPackages = async () => {
             await delay(500); // simulate fetch latency
-            setPackageData({ packages: [...packages].sort((a, b) => a.id.localeCompare(b.id)), isLoading: false });
+            setPackageData({ packages: [...packages].sort((a, b) => new Date(b.statusHistory[0].timestamp).getTime() - new Date(a.statusHistory[0].timestamp).getTime()), isLoading: false });
         };
 
         fetchPackages();
@@ -84,4 +84,16 @@ export async function updatePackageStatus(id: string, newStatus: PackageStatus, 
   packages[packageIndex] = updatedPackage;
   window.dispatchEvent(packageUpdateEvent);
   return updatedPackage;
+}
+
+export async function deletePackage(id: string): Promise<boolean> {
+    await delay(500);
+    const packageIndex = packages.findIndex(p => p.id === id);
+    if (packageIndex === -1) {
+        return false;
+    }
+    
+    packages.splice(packageIndex, 1);
+    window.dispatchEvent(packageUpdateEvent);
+    return true;
 }
