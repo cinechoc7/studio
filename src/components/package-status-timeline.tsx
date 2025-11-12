@@ -2,26 +2,24 @@
 
 import { cn, formatDate } from "@/lib/utils";
 import type { StatusHistory } from "@/lib/types";
-import { Package, Truck, Warehouse, Home, CheckCircle2, RotateCcw, PackageCheck } from "lucide-react";
+import { Package, Truck, Warehouse, CheckCircle2, XCircle, Clock, Home, Building } from "lucide-react";
 import React from "react";
 
-type PackageStatusTimelineProps = {
-  history: StatusHistory[];
-};
-
 const statusIcons: { [key: string]: React.ElementType } = {
-    'En attente': Package,
-    'En cours d\'emballage': PackageCheck,
-    'En cours de transit': Truck,
-    'Arrivé au hub': Warehouse,
-    'En cours de livraison': Truck,
+    'Pris en charge': Package,
+    'En cours d\'acheminement': Truck,
+    'Bloqué au dédouanement': XCircle,
+    'Arrivé au hub de distribution': Building,
+    'En cours de livraison': Home,
+    'Tentative de livraison échouée': Clock,
     'Livré': CheckCircle2,
-    'Retourné': RotateCcw,
+    'Retour à l\'expéditeur': XCircle,
 };
 
 
 export function PackageStatusTimeline({ history }: PackageStatusTimelineProps) {
-  const sortedHistory = [...history].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  // The history is now pre-sorted from the data source
+  const sortedHistory = history;
 
   return (
     <div className="relative">
@@ -56,3 +54,7 @@ export function PackageStatusTimeline({ history }: PackageStatusTimelineProps) {
     </div>
   );
 }
+
+type PackageStatusTimelineProps = {
+  history: StatusHistory[];
+};

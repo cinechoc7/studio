@@ -45,18 +45,21 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
     }
   }, [state, toast]);
 
+  // Filter out the current status from the list of options
+  const availableStatuses = packageStatuses.filter(status => status !== currentStatus);
+
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="packageId" value={packageId} />
       
       <div className="space-y-2">
         <Label htmlFor="status">Nouveau statut</Label>
-        <Select name="status" defaultValue={currentStatus}>
+        <Select name="status" defaultValue={availableStatuses[0]}>
           <SelectTrigger id="status">
             <SelectValue placeholder="Sélectionner un statut" />
           </SelectTrigger>
           <SelectContent>
-            {packageStatuses.map((status) => (
+            {availableStatuses.map((status) => (
               <SelectItem key={status} value={status}>
                 {status}
               </SelectItem>
@@ -66,7 +69,7 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="location">Emplacement</Label>
+        <Label htmlFor="location">Emplacement actuel</Label>
         <Input 
           id="location" 
           name="location" 

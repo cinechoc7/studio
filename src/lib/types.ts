@@ -1,11 +1,12 @@
 export const packageStatuses = [
-  'En attente',
-  'En cours d\'emballage',
-  'En cours de transit',
-  'Arrivé au hub',
+  'Pris en charge',
+  'En cours d\'acheminement',
+  'Bloqué au dédouanement',
+  'Arrivé au hub de distribution',
   'En cours de livraison',
+  'Tentative de livraison échouée',
   'Livré',
-  'Retourné'
+  'Retour à l\'expéditeur',
 ] as const;
 
 export type PackageStatus = (typeof packageStatuses)[number];
@@ -16,9 +17,17 @@ export type StatusHistory = {
   timestamp: Date;
 };
 
+export type ContactInfo = {
+    name: string;
+    address: string;
+    email: string;
+    phone: string;
+}
+
 export type Package = {
-  id: string;
-  customerName: string;
+  id: string; // Tracking code
+  sender: ContactInfo;
+  recipient: ContactInfo;
   origin: string;
   destination: string;
   currentStatus: PackageStatus;

@@ -1,56 +1,117 @@
-import type { Package, PackageStatus } from './types';
+'use client';
 
-// In-memory store for packages
+import { useState, useEffect } from 'react';
+import type { Package, PackageStatus, ContactInfo } from './types';
+import { useAuth } from '@/firebase';
+
+// This is a mock in-memory store.
+// In a real app, you would use a database like Firestore.
 let packages: Package[] = [
   {
     id: 'CS123456789FR',
-    customerName: 'Jean Dupont',
+    sender: {
+        name: 'Expéditeur SA',
+        address: '123 Rue de la Logistique, 75001 Paris, France',
+        email: 'contact@expediteur.fr',
+        phone: '0123456789'
+    },
+    recipient: {
+        name: 'Jean Dupont',
+        address: '456 Avenue du Soleil, 13008 Marseille, France',
+        email: 'jean.dupont@email.com',
+        phone: '0612345678'
+    },
     origin: 'Paris, France',
     destination: 'Marseille, France',
-    currentStatus: 'En cours de transit',
+    currentStatus: 'En cours d\'acheminement',
     statusHistory: [
-      { status: 'En cours d\'emballage', location: 'Entrepôt Paris', timestamp: new Date('2024-07-20T10:00:00Z') },
-      { status: 'En cours de transit', location: 'Centre de tri, Lyon', timestamp: new Date('2024-07-21T08:30:00Z') },
-    ],
+      { status: 'Pris en charge', location: 'Entrepôt Paris', timestamp: new Date('2024-07-21T10:00:00Z') },
+      { status: 'En cours d\'acheminement', location: 'Centre de tri, Lyon', timestamp: new Date('2024-07-22T08:30:00Z') },
+    ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
   },
   {
     id: 'CS987654321CA',
-    customerName: 'Marie Curie',
+    sender: {
+        name: 'Tech Innov',
+        address: '789 Boulevard de l\'Innovation, 69002 Lyon, France',
+        email: 'sales@techinnov.com',
+        phone: '0472000000'
+    },
+    recipient: {
+        name: 'Marie Curie',
+        address: '101 Rue de la Science, 59000 Lille, France',
+        email: 'marie.curie@labo.com',
+        phone: '0787654321'
+    },
     origin: 'Lyon, France',
     destination: 'Lille, France',
     currentStatus: 'Livré',
     statusHistory: [
-      { status: 'En attente', location: 'Entrepôt Lyon', timestamp: new Date('2024-07-18T14:00:00Z') },
-      { status: 'En cours d\'emballage', location: 'Entrepôt Lyon', timestamp: new Date('2024-07-18T16:20:00Z') },
-      { status: 'En cours de transit', location: 'Centre de tri, Paris', timestamp: new Date('2024-07-19T11:00:00Z') },
-      { status: 'Arrivé au hub', location: 'Hub de Lille', timestamp: new Date('2024-07-20T09:00:00Z') },
+      { status: 'Pris en charge', location: 'Entrepôt Lyon', timestamp: new Date('2024-07-18T16:20:00Z') },
+      { status: 'En cours d\'acheminement', location: 'Centre de tri, Paris', timestamp: new Date('2024-07-19T11:00:00Z') },
+      { status: 'Arrivé au hub de distribution', location: 'Hub de Lille', timestamp: new Date('2024-07-20T09:00:00Z') },
       { status: 'En cours de livraison', location: 'Lille', timestamp: new Date('2024-07-20T10:15:00Z') },
       { status: 'Livré', location: 'Lille, France', timestamp: new Date('2024-07-20T13:45:00Z') },
-    ],
-  },
-  {
-    id: 'CS555555555DE',
-    customerName: 'Louis Pasteur',
-    origin: 'Strasbourg, France',
-    destination: 'Bordeaux, France',
-    currentStatus: 'En attente',
-    statusHistory: [
-        { status: 'En attente', location: 'Entrepôt Strasbourg', timestamp: new Date('2024-07-22T09:00:00Z') },
-    ],
+    ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
   },
 ];
+
+// Custom event dispatcher to notify about package updates
+const packageUpdateEvent = new Event('packagesUpdated');
 
 // Simulate API latency
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export async function getPackages(): Promise<Package[]> {
-  await delay(500);
-  return [...packages].sort((a, b) => a.id.localeCompare(b.id));
+// Hook to get packages and subscribe to updates
+export function usePackages() {
+    const [packageData, setPackageData] = useState<{ packages: Package[], isLoading: boolean }>({ packages: [], isLoading: true });
+
+    useEffect(() => {
+        const fetchPackages = async () => {
+            await delay(500); // simulate fetch latency
+            setPackageData({ packages: [...packages].sort((a, b) => a.id.localeCompare(b.id)), isLoading: false });
+        };
+
+        fetchPackages();
+
+        const handleUpdate = () => fetchPackages();
+        window.addEventListener('packagesUpdated', handleUpdate);
+
+        return () => {
+            window.removeEventListener('packagesUpdated', handleUpdate);
+        };
+    }, []);
+
+    return packageData;
 }
 
+
 export async function getPackageById(id: string): Promise<Package | undefined> {
-  await delay(500);
+  await delay(200);
   return packages.find(p => p.id.toUpperCase() === id.toUpperCase());
+}
+
+export async function createPackage(pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory'>): Promise<Package> {
+    await delay(1000);
+    
+    // Generate a new tracking ID
+    const trackingId = `CS${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+
+    const newPackage: Package = {
+        ...pkgData,
+        id: trackingId,
+        currentStatus: 'Pris en charge',
+        statusHistory: [
+            {
+                status: 'Pris en charge',
+                location: pkgData.origin,
+                timestamp: new Date(),
+            }
+        ]
+    };
+    packages.unshift(newPackage); // Add to the beginning of the array
+    window.dispatchEvent(packageUpdateEvent); // Notify listeners
+    return newPackage;
 }
 
 export async function updatePackageStatus(id: string, newStatus: PackageStatus, location: string): Promise<Package | null> {
@@ -62,15 +123,13 @@ export async function updatePackageStatus(id: string, newStatus: PackageStatus, 
 
   const updatedPackage = { ...packages[packageIndex] };
   updatedPackage.currentStatus = newStatus;
-  updatedPackage.statusHistory.push({
+  updatedPackage.statusHistory.unshift({
     status: newStatus,
     location,
     timestamp: new Date(),
   });
 
-  // Sort history to show most recent first, which is how we'll display it
-  updatedPackage.statusHistory.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
   packages[packageIndex] = updatedPackage;
+  window.dispatchEvent(packageUpdateEvent);
   return updatedPackage;
 }

@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { updatePackageStatus as dbUpdatePackageStatus } from "./data";
-import type { PackageStatus } from "./types";
+import { updatePackageStatus as dbUpdatePackageStatus, createPackage as dbCreatePackage } from "./data";
+import type { PackageStatus, ContactInfo } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
 
 const updateStatusSchema = z.object({
@@ -22,7 +22,7 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
 
     if (!validatedFields.success) {
       return {
-        message: 'Invalid form data.',
+        message: 'Données du formulaire invalides.',
         errors: validatedFields.error.flatten().fieldErrors,
         success: false,
       };
@@ -30,21 +30,79 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
     
     const { packageId, status, location } = validatedFields.data;
 
-    const updatedPackage = await dbUpdatePackageStatus(packageId, status as PackageStatus, location);
-
-    if (!updatedPackage) {
-      return { message: "Package not found.", success: false };
-    }
+    await dbUpdatePackageStatus(packageId, status as PackageStatus, location);
 
     revalidatePath("/admin");
     revalidatePath(`/admin/package/${packageId}`);
     revalidatePath(`/tracking/${packageId}`);
 
-    return { message: `Package status updated to "${status}".`, success: true };
+    return { message: `Statut du colis mis à jour en "${status}".`, success: true };
   } catch (error) {
-    return { message: "An unexpected error occurred.", success: false };
+    return { message: "Une erreur inattendue est survenue.", success: false };
   }
 }
+
+const contactSchema = z.object({
+    name: z.string().min(2, "Le nom est requis."),
+    address: z.string().min(5, "L'adresse est requise."),
+    email: z.string().email("L'email est invalide."),
+    phone: z.string().min(10, "Le téléphone est requis."),
+});
+
+const createPackageSchema = z.object({
+  senderName: contactSchema.shape.name,
+  senderAddress: contactSchema.shape.address,
+  senderEmail: contactSchema.shape.email,
+  senderPhone: contactSchema.shape.phone,
+  recipientName: contactSchema.shape.name,
+  recipientAddress: contactSchema.shape.address,
+  recipientEmail: contactSchema.shape.email,
+  recipientPhone: contactSchema.shape.phone,
+  origin: z.string().min(2, "L'origine est requise."),
+  destination: z.string().min(2, "La destination est requise."),
+});
+
+export async function createPackageAction(prevState: any, formData: FormData) {
+    try {
+        const validatedFields = createPackageSchema.safeParse(Object.fromEntries(formData.entries()));
+
+        if (!validatedFields.success) {
+            return {
+                message: 'Données du formulaire invalides.',
+                errors: validatedFields.error.flatten().fieldErrors,
+                success: false,
+            };
+        }
+
+        const { 
+            senderName, senderAddress, senderEmail, senderPhone,
+            recipientName, recipientAddress, recipientEmail, recipientPhone,
+            origin, destination
+        } = validatedFields.data;
+
+        const newPackageData = {
+            sender: { name: senderName, address: senderAddress, email: senderEmail, phone: senderPhone },
+            recipient: { name: recipientName, address: recipientAddress, email: recipientEmail, phone: recipientPhone },
+            origin,
+            destination,
+        };
+
+        const newPackage = await dbCreatePackage(newPackageData);
+
+        revalidatePath("/admin");
+
+        return { message: `Colis ${newPackage.id} créé avec succès.`, success: true, errors: null };
+
+    } catch (e) {
+        console.error(e);
+        return {
+            message: 'Une erreur serveur est survenue lors de la création du colis.',
+            success: false,
+            errors: null
+        }
+    }
+}
+
 
 const optimizeRouteSchema = z.object({
     origin: z.string().min(1, 'Origin is required'),

@@ -1,18 +1,40 @@
+'use client';
+
 import { getPackageById } from "@/lib/data";
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Package as PackageIcon, MapPin, Calendar, CheckCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft, Package as PackageIcon, MapPin, Calendar, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useEffect, useState } from "react";
+import type { Package } from "@/lib/types";
 
 type TrackingPageProps = {
   params: { id: string };
 };
 
-export default async function TrackingPage({ params }: TrackingPageProps) {
-  const pkg = await getPackageById(params.id);
+export default function TrackingPage({ params }: TrackingPageProps) {
+  const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
+
+  useEffect(() => {
+    async function fetchPackage() {
+        const packageData = await getPackageById(params.id);
+        setPkg(packageData);
+    }
+    fetchPackage();
+  }, [params.id]);
+
+
+  if (pkg === undefined) {
+    return (
+        <main className="flex min-h-screen w-full flex-col items-center justify-center p-4">
+             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+    )
+  }
+
 
   if (!pkg) {
     return (
@@ -50,7 +72,7 @@ export default async function TrackingPage({ params }: TrackingPageProps) {
                         Suivi du Colis <span className="text-accent">#{pkg.id}</span>
                     </CardTitle>
                     <CardDescription>
-                        Pour {pkg.customerName}
+                        Pour {pkg.recipient.name}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">

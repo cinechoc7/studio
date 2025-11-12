@@ -1,3 +1,4 @@
+'use client';
 import { getPackageById } from "@/lib/data";
 import {
   Card,
@@ -7,18 +8,49 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, User, Mail, Phone, Home } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { UpdateStatusForm } from "@/components/admin/update-status-form";
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
+import { useEffect, useState } from "react";
+import type { Package } from "@/lib/types";
+import { Separator } from "@/components/ui/separator";
 
 type AdminPackagePageProps = {
   params: { id: string };
 };
 
-export default async function AdminPackagePage({ params }: AdminPackagePageProps) {
-  const pkg = await getPackageById(params.id);
+export default function AdminPackagePage({ params }: AdminPackagePageProps) {
+  const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
+  
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchPackage() {
+        const packageData = await getPackageById(params.id);
+        if(isMounted) {
+            setPkg(packageData);
+        }
+    }
+    fetchPackage();
+    
+    const handleUpdate = () => fetchPackage();
+    window.addEventListener('packagesUpdated', handleUpdate);
+
+    return () => {
+        isMounted = false;
+        window.removeEventListener('packagesUpdated', handleUpdate);
+    };
+  }, [params.id]);
+
+
+  if (pkg === undefined) {
+    return (
+        <main className="flex flex-1 flex-col items-center justify-center p-4 lg:p-6">
+             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+    )
+  }
 
   if (!pkg) {
     return (
@@ -44,11 +76,11 @@ export default async function AdminPackagePage({ params }: AdminPackagePageProps
             <Link href="/admin"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <h1 className="flex-1 shrink-0 whitespace-nowrap text-xl font-semibold tracking-tight sm:grow-0">
-          Colis #{pkg.id}
+          Colis <span className="font-mono text-primary">#{pkg.id}</span>
         </h1>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="lg:col-span-4 flex flex-col gap-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="lg:col-span-2 grid gap-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Mettre à jour le statut</CardTitle>
@@ -60,33 +92,55 @@ export default async function AdminPackagePage({ params }: AdminPackagePageProps
                     <UpdateStatusForm packageId={pkg.id} currentStatus={pkg.currentStatus} />
                 </CardContent>
             </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Détails du colis</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <p className="font-medium text-muted-foreground">Client</p>
-                            <p>{pkg.customerName}</p>
+
+            <div className="grid md:grid-cols-2 gap-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">Expéditeur</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-4">
+                        <div className="flex items-start gap-3">
+                            <User className="h-4 w-4 mt-1 text-muted-foreground" />
+                            <div>
+                                <p className="font-semibold">{pkg.sender.name}</p>
+                                <p className="text-muted-foreground">{pkg.sender.address}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="font-medium text-muted-foreground">Statut Actuel</p>
-                            <p>{pkg.currentStatus}</p>
+                         <div className="flex items-center gap-3">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <a href={`mailto:${pkg.sender.email}`} className="text-primary hover:underline">{pkg.sender.email}</a>
                         </div>
-                        <div>
-                            <p className="font-medium text-muted-foreground">Origine</p>
-                            <p>{pkg.origin}</p>
+                         <div className="flex items-center gap-3">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <span>{pkg.sender.phone}</span>
                         </div>
-                        <div>
-                            <p className="font-medium text-muted-foreground">Destination</p>
-                            <p>{pkg.destination}</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">Destinataire</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-4">
+                         <div className="flex items-start gap-3">
+                            <User className="h-4 w-4 mt-1 text-muted-foreground" />
+                            <div>
+                                <p className="font-semibold">{pkg.recipient.name}</p>
+                                <p className="text-muted-foreground">{pkg.recipient.address}</p>
+                            </div>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
+                         <div className="flex items-center gap-3">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <a href={`mailto:${pkg.recipient.email}`} className="text-primary hover:underline">{pkg.recipient.email}</a>
+                        </div>
+                         <div className="flex items-center gap-3">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <span>{pkg.recipient.phone}</span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-1">
             <Card>
                 <CardHeader>
                     <CardTitle>Historique des statuts</CardTitle>
