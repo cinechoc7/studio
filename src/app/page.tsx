@@ -1,9 +1,10 @@
 import { TrackingForm } from '@/components/tracking-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, PackageCheck, ShieldCheck, Zap, Package, ArrowRight, Star } from 'lucide-react';
+import { Search, ShieldCheck, Zap, Package, ArrowRight, Star } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
@@ -15,6 +16,30 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
       <p className="text-muted-foreground">{description}</p>
     </div>
   )
+}
+
+function TestimonialCard({ name, avatar, text, rating }: { name: string, avatar: string, text: string, rating: number }) {
+    return (
+        <Card className="bg-card/80 backdrop-blur-sm border-border/30 shadow-2xl shadow-black/30 p-6">
+            <CardContent className="p-0">
+                <div className="flex items-center mb-4">
+                    <Avatar className="h-12 w-12 mr-4">
+                        <AvatarImage src={avatar} alt={name} />
+                        <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p className="font-bold text-foreground">{name}</p>
+                        <div className="flex text-primary">
+                            {[...Array(5)].map((_, i) => (
+                                <Star key={i} className={`h-4 w-4 ${i < rating ? 'fill-current' : ''}`} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                <p className="text-muted-foreground italic">"{text}"</p>
+            </CardContent>
+        </Card>
+    );
 }
 
 export default function Home() {
@@ -37,7 +62,7 @@ export default function Home() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative w-full overflow-hidden bg-gradient-to-b from-background via-indigo-950 to-background">
-          <div className="container relative z-10 mx-auto grid min-h-dvh items-center gap-8 px-4 pt-24 pb-16 text-center md:grid-cols-2 md:text-left">
+          <div className="container relative z-10 mx-auto grid min-h-dvh items-center gap-8 px-4 pt-24 pb-16 md:grid-cols-2 md:text-left">
             <div className="max-w-3xl">
               <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
                 Suivi de Colis.
@@ -57,9 +82,17 @@ export default function Home() {
                     <TrackingForm />
                   </CardContent>
                 </Card>
+                <div className="flex items-center mt-4 text-sm text-muted-foreground">
+                    <Star className="w-4 h-4 mr-1 text-primary fill-primary" />
+                    <Star className="w-4 h-4 mr-1 text-primary fill-primary" />
+                    <Star className="w-4 h-4 mr-1 text-primary fill-primary" />
+                    <Star className="w-4 h-4 mr-1 text-primary fill-primary" />
+                    <Star className="w-4 h-4 mr-2 text-primary fill-primary" />
+                    Rejoignez des milliers d'utilisateurs satisfaits.
+                </div>
               </div>
             </div>
-             <div className="relative h-64 md:h-full flex items-center justify-center">
+             <div className="relative h-64 md:h-full md:flex items-center justify-center hidden">
                  <Image
                     src="https://picsum.photos/seed/package3d/600/600"
                     alt="3D illustration of packages"
@@ -98,20 +131,70 @@ export default function Home() {
             </div>
           </div>
         </section>
+        
+        {/* Testimonials Section */}
+        <section id="testimonials" className="py-16 bg-secondary/20 md:py-24">
+            <div className="container px-4 mx-auto md:px-6">
+                <h2 className="mb-16 text-3xl font-bold text-center text-foreground md:text-4xl">
+                    Ce que nos utilisateurs disent de nous
+                </h2>
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    <TestimonialCard
+                        name="Sophie L."
+                        avatar="https://i.pravatar.cc/150?u=sophie"
+                        rating={5}
+                        text="Enfin une application de suivi qui est à la fois belle et fonctionnelle. Je sais toujours exactement où est mon colis. C'est très rassurant !"
+                    />
+                    <TestimonialCard
+                        name="Marc D."
+                        avatar="https://i.pravatar.cc/150?u=marc"
+                        rating={5}
+                        text="Le suivi en temps réel est incroyablement précis. L'interface est super intuitive, même pour quelqu'un qui n'est pas très à l'aise avec la technologie."
+                    />
+                    <TestimonialCard
+                        name="Julien B."
+                        avatar="https://i.pravatar.cc/150?u=julien"
+                        rating={5}
+                        text="Colimove a changé ma façon de gérer mes livraisons professionnelles. C'est devenu un outil indispensable pour mon e-commerce. Bravo à l'équipe !"
+                    />
+                </div>
+            </div>
+        </section>
+
       </main>
 
       <footer className="w-full px-4 py-8 border-t bg-card md:px-6">
-        <div className="container flex flex-col items-center justify-between mx-auto md:flex-row">
-            <div className="mb-4 md:mb-0">
-                 <Link href="/" className="flex items-center gap-2">
-                    <Package className="w-6 h-6 text-primary" />
-                    <span className="text-xl font-bold text-foreground">Colimove</span>
-                </Link>
-                <p className="text-sm text-muted-foreground">Suivi de colis simple et rapide.</p>
+        <div className="container mx-auto">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                <div className="mb-4 md:mb-0">
+                     <Link href="/" className="flex items-center gap-2">
+                        <Package className="w-6 h-6 text-primary" />
+                        <span className="text-xl font-bold text-foreground">Colimove</span>
+                    </Link>
+                    <p className="mt-2 text-sm text-muted-foreground">Suivi de colis simple, rapide et fiable pour tous vos besoins.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-8 text-sm">
+                    <div>
+                        <h4 className="font-semibold text-foreground mb-2">Navigation</h4>
+                        <ul className="space-y-2 text-muted-foreground">
+                            <li><Link href="#" className="hover:text-primary">Accueil</Link></li>
+                            <li><Link href="#features" className="hover:text-primary">Fonctionnalités</Link></li>
+                            <li><Link href="/login" className="hover:text-primary">Espace Admin</Link></li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold text-foreground mb-2">Légal</h4>
+                        <ul className="space-y-2 text-muted-foreground">
+                            <li><Link href="#" className="hover:text-primary">Conditions d'utilisation</Link></li>
+                            <li><Link href="#" className="hover:text-primary">Politique de confidentialité</Link></li>
+                             <li><Link href="#" className="hover:text-primary">Contact</Link></li>
+                        </ul>
+                    </div>
+                </div>
+                <div className="text-sm text-muted-foreground md:text-right">
+                    &copy; {new Date().getFullYear()} Colimove. Tous droits réservés.
+                </div>
             </div>
-             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Colimove. Tous droits réservés.
-            </p>
         </div>
       </footer>
     </div>
