@@ -94,7 +94,8 @@ export default {
           '50%': { transform: 'scale(1.05)', opacity: '0.9' },
         },
         'scroll': {
-          'to': { transform: 'translateX(-50%)' },
+          'from': { transform: 'translateX(0)' },
+          'to': { transform: 'translateX(-100%)' },
         }
       },
       animation: {

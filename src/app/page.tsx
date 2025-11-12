@@ -3,7 +3,7 @@
 import { TrackingForm } from '@/components/tracking-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, ShieldCheck, Zap, Package, ArrowRight, Star, Plus, Forward } from 'lucide-react';
+import { Search, ShieldCheck, Zap, Package, ArrowRight, Star, Plus, Forward, Keyboard, Map, Bell } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -138,7 +138,7 @@ export default function Home() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative w-full overflow-hidden bg-gradient-to-b from-background via-indigo-950 to-background">
+        <section className="relative w-full overflow-hidden bg-gradient-to-b from-background via-background to-secondary/20">
           <div className="container relative z-10 mx-auto grid min-h-dvh items-center gap-8 px-4 pt-24 pb-16 md:grid-cols-2 md:text-left">
             <div className="max-w-3xl">
               <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
@@ -205,11 +205,14 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-16 bg-background md:py-24">
+        <section id="features" className="py-16 bg-secondary/20 md:py-24">
           <div className="container px-4 mx-auto md:px-6">
-            <h2 className="mb-16 text-3xl font-bold text-center text-foreground md:text-4xl">
+            <h2 className="mb-4 text-3xl font-bold text-center text-foreground md:text-4xl">
               Une expérience de suivi inégalée
             </h2>
+            <p className="max-w-3xl mx-auto mb-16 text-lg text-center text-muted-foreground">
+                Colimove a été conçu pour transformer le suivi de colis en une expérience simple, transparente et rassurante.
+            </p>
             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               <FeatureCard 
                 icon={<ShieldCheck className="w-8 h-8" />}
@@ -230,12 +233,63 @@ export default function Home() {
           </div>
         </section>
 
+         {/* How it works Section */}
+        <section id="how-it-works" className="py-16 bg-background md:py-24">
+            <div className="container px-4 mx-auto md:px-6">
+                 <h2 className="mb-4 text-3xl font-bold text-center text-foreground md:text-4xl">
+                    Suivre un colis, un jeu d'enfant
+                </h2>
+                <p className="max-w-3xl mx-auto mb-16 text-lg text-center text-muted-foreground">
+                    Notre processus simplifié vous permet de savoir où est votre colis en un clin d'œil.
+                </p>
+                <div className="relative grid grid-cols-1 gap-12 md:grid-cols-3">
+                    {/* Dotted line for desktop */}
+                    <div className="absolute top-1/2 left-0 hidden w-full h-px -translate-y-1/2 md:block">
+                        <svg width="100%" height="100%"><line x1="0" y1="0" x2="100%" y2="0" strokeWidth="2" stroke="hsl(var(--border))" strokeDasharray="8 8"/></svg>
+                    </div>
+                     {/* Vertical Dotted line for mobile */}
+                    <div className="absolute top-0 left-10 md:hidden h-full w-px -translate-x-1/2">
+                         <svg width="100%" height="100%"><line x1="0" y1="0" x2="0" y2="100%" strokeWidth="2" stroke="hsl(var(--border))" strokeDasharray="8 8"/></svg>
+                    </div>
+
+                    <div className="relative flex flex-col items-center text-center">
+                        <div className="z-10 flex items-center justify-center w-20 h-20 mb-4 rounded-full bg-primary/10 border-2 border-primary text-primary">
+                            <Keyboard className="w-10 h-10"/>
+                        </div>
+                        <h3 className="mb-2 text-xl font-bold">1. Saisissez votre numéro</h3>
+                        <p className="text-muted-foreground">Entrez simplement le code de suivi de votre colis dans la barre de recherche.</p>
+                    </div>
+                    <div className="relative flex flex-col items-center text-center">
+                        <div className="z-10 flex items-center justify-center w-20 h-20 mb-4 rounded-full bg-primary/10 border-2 border-primary text-primary">
+                            <Map className="w-10 h-10"/>
+                        </div>
+                        <h3 className="mb-2 text-xl font-bold">2. Suivez en temps réel</h3>
+                        <p className="text-muted-foreground">Visualisez instantanément la localisation actuelle et l'historique de votre colis.</p>
+                    </div>
+                    <div className="relative flex flex-col items-center text-center">
+                         <div className="z-10 flex items-center justify-center w-20 h-20 mb-4 rounded-full bg-primary/10 border-2 border-primary text-primary">
+                            <Bell className="w-10 h-10"/>
+                        </div>
+                        <h3 className="mb-2 text-xl font-bold">3. Soyez notifié(e)</h3>
+                        <p className="text-muted-foreground">Recevez des mises à jour à chaque étape importante de la livraison (bientôt disponible).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         {/* Partners Section */}
         <section id="partners" className="py-16 bg-secondary/20 md:py-24">
             <div className="container px-4 mx-auto md:px-6">
                 <h2 className="mb-12 text-2xl font-bold text-center text-foreground md:text-3xl">Nos partenaires de confiance</h2>
-                <div className="relative overflow-hidden">
-                    <div className="flex animate-scroll group-hover:animation-pause">
+                <div className="relative overflow-hidden group">
+                    <div className="flex animate-scroll group-hover:pause">
+                       {partners.map((partner, index) => (
+                         <div key={index} className="flex-shrink-0 mx-6 w-36 flex justify-center items-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+                           {partner.logo}
+                         </div>
+                       ))}
+                    </div>
+                     <div className="absolute top-0 flex animate-scroll2 group-hover:pause">
                        {partners.map((partner, index) => (
                          <div key={index} className="flex-shrink-0 mx-6 w-36 flex justify-center items-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
                            {partner.logo}
