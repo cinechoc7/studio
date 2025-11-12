@@ -21,6 +21,7 @@ import { Loader2, PlusCircle, User, Mail, Phone, MapPin, Building, PackagePlus }
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/firebase';
+import type { ContactInfo } from '@/lib/types';
 
 const initialState = {
   message: '',
@@ -45,6 +46,15 @@ export function AddPackageDialog() {
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [idToken, setIdToken] = useState('');
+  const [lastSender, setLastSender] = useState<ContactInfo | null>(null);
+
+  useEffect(() => {
+    // Load last sender from localStorage
+    const savedSender = localStorage.getItem('lastSender');
+    if (savedSender) {
+      setLastSender(JSON.parse(savedSender));
+    }
+  }, []);
 
   useEffect(() => {
     if (auth.currentUser) {
@@ -60,7 +70,33 @@ export function AddPackageDialog() {
         variant: state.success ? 'default' : 'destructive',
       });
       if (state.success) {
-        formRef.current?.reset();
+        // Get sender data from the submitted form that was successful
+        const formData = new FormData(formRef.current!);
+        const newSender: ContactInfo = {
+            name: formData.get('senderName') as string,
+            address: formData.get('senderAddress') as string,
+            email: formData.get('senderEmail') as string,
+            phone: formData.get('senderPhone') as string,
+        };
+        // Save to state and localStorage
+        setLastSender(newSender);
+        localStorage.setItem('lastSender', JSON.stringify(newSender));
+
+        // Reset only recipient and itinerary fields
+        const recipientName = formRef.current?.elements.namedItem('recipientName') as HTMLInputElement;
+        const recipientAddress = formRef.current?.elements.namedItem('recipientAddress') as HTMLInputElement;
+        const recipientEmail = formRef.current?.elements.namedItem('recipientEmail') as HTMLInputElement;
+        const recipientPhone = formRef.current?.elements.namedItem('recipientPhone') as HTMLInputElement;
+        const origin = formRef.current?.elements.namedItem('origin') as HTMLInputElement;
+        const destination = formRef.current?.elements.namedItem('destination') as HTMLInputElement;
+
+        if (recipientName) recipientName.value = '';
+        if (recipientAddress) recipientAddress.value = '';
+        if (recipientEmail) recipientEmail.value = '';
+        if (recipientPhone) recipientPhone.value = '';
+        if (origin) origin.value = '';
+        if (destination) destination.value = '';
+        
         closeButtonRef.current?.click();
       }
     }
@@ -89,22 +125,22 @@ export function AddPackageDialog() {
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Building className="text-primary"/>Informations de l'Expéditeur</h3>
               <div className="space-y-2">
                 <Label htmlFor="senderName">Nom Complet</Label>
-                <Input id="senderName" name="senderName" placeholder="Ex: John Doe" required />
+                <Input id="senderName" name="senderName" placeholder="Ex: John Doe" defaultValue={lastSender?.name} required />
                 {state.errors?.senderName && <p className="text-sm text-destructive">{state.errors.senderName}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senderAddress">Adresse Complète</Label>
-                <Input id="senderAddress" name="senderAddress" placeholder="Ex: 123 Rue Principale, 75001 Paris" required />
+                <Input id="senderAddress" name="senderAddress" placeholder="Ex: 123 Rue Principale, 75001 Paris" defaultValue={lastSender?.address} required />
                 {state.errors?.senderAddress && <p className="text-sm text-destructive">{state.errors.senderAddress}</p>}
               </div>
                <div className="space-y-2">
                 <Label htmlFor="senderEmail">Email (Optionnel)</Label>
-                <Input id="senderEmail" name="senderEmail" type="email" placeholder="Ex: expediteur@email.com" />
+                <Input id="senderEmail" name="senderEmail" type="email" placeholder="Ex: expediteur@email.com" defaultValue={lastSender?.email} />
                 {state.errors?.senderEmail && <p className="text-sm text-destructive">{state.errors.senderEmail}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senderPhone">Téléphone (Optionnel)</Label>
-                <Input id="senderPhone" name="senderPhone" type="tel" placeholder="Ex: 0123456789" />
+                <Input id="senderPhone" name="senderPhone" type="tel" placeholder="Ex: 0123456789" defaultValue={lastSender?.phone} />
                 {state.errors?.senderPhone && <p className="text-sm text-destructive">{state.errors.senderPhone}</p>}
               </div>
             </div>

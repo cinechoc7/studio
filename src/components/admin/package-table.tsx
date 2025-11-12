@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Package as PackageIcon, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -30,6 +30,7 @@ import { deletePackage as deletePackageAction } from "@/lib/data";
 import { useTransition } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore } from "@/firebase";
+import { VariantProps } from "class-variance-authority";
 
 type PackageTableProps = {
   packages: Package[];
@@ -88,7 +89,7 @@ function DeletePackageDialog({ packageId }: { packageId: string }) {
 export function PackageTable({ packages }: PackageTableProps) {
   const router = useRouter();
   
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = (status: string): VariantProps<typeof badgeVariants>["variant"] => {
     switch (status) {
       case 'Livré':
         return 'success';
@@ -150,7 +151,7 @@ export function PackageTable({ packages }: PackageTableProps) {
                             <TableCell className="font-medium">{pkg.recipient.name}</TableCell>
                             <TableCell>{pkg.destination}</TableCell>
                             <TableCell>
-                                <Badge variant={getStatusVariant(pkg.currentStatus) as any}>{pkg.currentStatus}</Badge>
+                                <Badge variant={getStatusVariant(pkg.currentStatus)}>{pkg.currentStatus}</Badge>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">{new Date(pkg.createdAt as Date).toLocaleDateString('fr-FR')}</TableCell>
                             <TableCell className="text-right">
