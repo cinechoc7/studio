@@ -1,5 +1,6 @@
 
 
+
 import { TrackingForm } from '@/components/tracking-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -124,6 +125,24 @@ const partners = [
     { name: 'Colissimo', logo: <Colissimo className="h-8 md:h-10 w-auto" /> },
 ];
 
+const FloatingPackage = () => (
+    <svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-2xl">
+        <path d="M20 50 L100 10 L180 50 L100 90 Z" fill="#FFA726" stroke="#FB8C00" strokeWidth="2"/>
+        <path d="M20 50 L20 110 L100 150 L100 90 Z" fill="#FFB74D" stroke="#FB8C00" strokeWidth="2"/>
+        <path d="M100 90 L100 150 L180 110 L180 50 Z" fill="#FFE0B2" stroke="#FB8C00" strokeWidth="2"/>
+        <path d="M60 70 L140 70 L140 130 L60 130 Z" fill="rgba(255,255,255,0.3)" />
+        <text x="100" y="110" fontFamily="sans-serif" fontSize="20" fill="white" textAnchor="middle" fontWeight="bold">C</text>
+    </svg>
+)
+
+const FloatingEnvelope = () => (
+    <svg viewBox="0 0 150 100" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-2xl">
+        <path d="M10 20 L75 60 L140 20 L10 20 Z" fill="#FFFFFF" stroke="#E0E0E0" strokeWidth="2"/>
+        <path d="M10 20 L10 80 L140 80 L140 20 L75 60 Z" fill="#F5F5F5" stroke="#E0E0E0" strokeWidth="2"/>
+        <circle cx="115" cy="35" r="15" fill="#FFA726"/>
+    </svg>
+)
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-dvh bg-background text-foreground">
@@ -194,12 +213,21 @@ export default function Home() {
                  <Image
                     src="https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHwlMjBDT0xJU3xlbnwwfHx8fDE3NjI5NjgxODF8MA&ixlib=rb-4.1.0&q=80&w=1080"
                     alt="Person holding a package"
-                    width={600}
-                    height={600}
-                    className="object-cover rounded-xl shadow-2xl"
+                    fill
+                    className="object-cover rounded-xl shadow-2xl opacity-20"
                     data-ai-hint="package transit"
                     priority
                 />
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative w-full h-full">
+                        <div className="absolute top-[20%] left-[15%] w-48 h-32 animate-float-slow">
+                            <FloatingEnvelope />
+                        </div>
+                         <div className="absolute bottom-[25%] right-[10%] w-80 h-64 animate-float-fast">
+                            <FloatingPackage />
+                        </div>
+                    </div>
+                </div>
             </div>
           </div>
         </section>

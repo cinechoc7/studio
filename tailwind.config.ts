@@ -96,13 +96,25 @@ export default {
         'scroll': {
           'from': { transform: 'translateX(0)' },
           'to': { transform: 'translateX(-100%)' },
-        }
+        },
+        'float-slow': {
+          '0%': { transform: 'translateY(0px) rotate(-5deg)' },
+          '50%': { transform: 'translateY(-20px) rotate(5deg)' },
+          '100%': { transform: 'translateY(0px) rotate(-5deg)' },
+        },
+        'float-fast': {
+            '0%': { transform: 'translateY(0px) rotate(3deg)' },
+            '50%': { transform: 'translateY(-15px) rotate(-3deg)' },
+            '100%': { transform: 'translateY(0px) rotate(3deg)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'pulse-slow': 'pulse-slow 5s ease-in-out infinite',
         'scroll': 'scroll 40s linear infinite',
+        'float-slow': 'float-slow 8s ease-in-out infinite',
+        'float-fast': 'float-fast 6s ease-in-out infinite',
       },
     },
   },
