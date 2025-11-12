@@ -153,14 +153,8 @@ export async function createPackageAction(prevState: any, formData: FormData) {
 
     const { adminId, ...packageData } = validatedFields.data;
 
-    // Basic check to ensure adminId is present.
-    // The real security check happens in Firestore rules.
     if (!adminId) {
-        return {
-            message: 'Utilisateur non authentifié ou invalide.',
-            success: false,
-            errors: null
-        }
+        return { message: 'Utilisateur non authentifié ou invalide.', success: false, errors: null }
     }
     
     try {
@@ -177,26 +171,17 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             destination,
         };
         
-        const firestore = getFirestore();
-        // Pass the adminId to the database function
-        const newPackage = await dbCreatePackage(firestore, newPackageData, adminId);
+        // The database function now handles its own Firestore instance
+        const newPackage = await dbCreatePackage(newPackageData, adminId);
         
         revalidatePath("/admin");
 
         return { message: `Colis ${newPackage.id} créé avec succès.`, success: true, errors: null };
 
     } catch (e: any) {
-        console.error(e);
-        // Check for permission denied error from Firestore rules
-        if (e.message.includes('permission-denied') || e.code === 'permission-denied') {
-             return {
-                message: 'Permission refusée. Assurez-vous que vous êtes un administrateur connecté.',
-                success: false,
-                errors: null
-            }
-        }
+        console.error("Server Action Error:", e);
         return {
-            message: 'Une erreur serveur est survenue lors de la création du colis.',
+            message: 'Une erreur est survenue lors de la création du colis.',
             success: false,
             errors: null
         }

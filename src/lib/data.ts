@@ -16,11 +16,22 @@ import {
   Timestamp,
   Firestore,
   where,
+  getApps,
+  initializeApp,
+  getFirestore,
 } from 'firebase/firestore';
+import { firebaseConfig } from '@/firebase/config';
 
 // Custom event dispatcher to notify about package updates
 const packageUpdateEvent = new Event('packagesUpdated');
 
+// Helper to get a stable firestore instance, initializing if needed.
+const getDb = () => {
+    if (!getApps().length) {
+        initializeApp(firebaseConfig);
+    }
+    return getFirestore(getApps()[0]);
+}
 
 function convertTimestamps(data: any): any {
   if (data instanceof Timestamp) {
@@ -84,7 +95,8 @@ export async function getPackageById(firestore: Firestore, id: string): Promise<
     }
 }
 
-export async function createPackage(firestore: Firestore, pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
+export async function createPackage(pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
+    const firestore = getDb(); // Get a stable firestore instance
     
     const statusHistory = [{
         status: 'Pris en charge',
@@ -107,8 +119,10 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
     
     try {
         await setDoc(docRef, newPackageData);
-        window.dispatchEvent(packageUpdateEvent);
-        // We can't return the package with the server timestamp immediately, but we can return the local version
+        // This won't work in a server action, but we keep it for potential client-side calls
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(packageUpdateEvent);
+        }
         return { id: newId, ...pkgData, ...convertTimestamps(newPackageData)} as Package;
     } catch (error) {
         console.error("Error creating package:", error);
@@ -142,7 +156,9 @@ export async function updatePackageStatus(firestore: Firestore, id: string, newS
             statusHistory: updatedHistory,
         });
         
-        window.dispatchEvent(packageUpdateEvent);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(packageUpdateEvent);
+        }
         const updatedDoc = await getDoc(docRef);
         return { id: updatedDoc.id, ...convertTimestamps(updatedDoc.data()) } as Package;
 
@@ -161,7 +177,9 @@ export async function deletePackage(firestore: Firestore, id: string, adminId: s
              throw new Error("permission-denied");
         }
         await deleteDoc(docRef);
-        window.dispatchEvent(packageUpdateEvent);
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(packageUpdateEvent);
+        }
         return true;
     } catch (error) {
         console.error("Error deleting package:", error);
