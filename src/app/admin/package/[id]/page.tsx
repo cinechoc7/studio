@@ -13,7 +13,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { UpdateStatusForm } from "@/components/admin/update-status-form";
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import type { Package } from "@/lib/types";
 import { Separator } from "@/components/ui/separator";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -40,8 +40,7 @@ function convertTimestamps(data: any): any {
 
 export default function AdminPackagePage({ params }: AdminPackagePageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
-  const resolvedParams = use(params);
-  const packageId = resolvedParams.id;
+  const packageId = params.id;
   const firestore = useFirestore();
   
   const packageRef = useMemoFirebase(() => {
