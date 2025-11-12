@@ -13,9 +13,18 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
     
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
     match /packages/{packageId} {
       allow read: if true;
-      allow create, update, delete: if isSignedIn() && request.auth.uid == request.resource.data.adminId;
+      allow create: if isSignedIn() && isAdmin() && request.auth.uid == request.resource.data.adminId;
+      allow update, delete: if isSignedIn() && isAdmin() && request.auth.uid == resource.data.adminId;
+    }
+    
+    match /admins/{adminId} {
+        allow read, write: if isSignedIn() && request.auth.uid == adminId;
     }
   }
 }

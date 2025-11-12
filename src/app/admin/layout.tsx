@@ -58,14 +58,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 mt-auto border-t border-sidebar-border">
             <div className="flex items-center gap-3 p-2 rounded-lg bg-muted">
                 <Avatar className="h-10 w-10 border-2 border-primary">
-                    <AvatarImage src="https://i.pravatar.cc/150?u=admin" alt="Admin" />
-                    <AvatarFallback>A</AvatarFallback>
+                    <AvatarImage src={`https://i.pravatar.cc/150?u=${auth.currentUser?.email}`} alt="Admin" />
+                    <AvatarFallback>{auth.currentUser?.email?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <div className="text-sm">
-                    <p className="font-semibold text-foreground">Admin</p>
-                    <p className="text-xs text-muted-foreground/70">{auth.currentUser?.email}</p>
+                <div className="text-sm overflow-hidden">
+                    <p className="font-semibold text-foreground truncate">Admin</p>
+                    <p className="text-xs text-muted-foreground/70 truncate">{auth.currentUser?.email}</p>
                 </div>
-                 <Button variant="ghost" size="icon" className="w-8 h-8 ml-auto rounded-full hover:bg-black/30" onClick={handleSignOut}>
+                 <Button variant="ghost" size="icon" className="w-8 h-8 ml-auto rounded-full hover:bg-black/30 shrink-0" onClick={handleSignOut}>
                     <LogOut className="h-4 w-4" />
                 </Button>
             </div>

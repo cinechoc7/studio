@@ -6,15 +6,13 @@ import { updatePackageStatus as dbUpdatePackageStatus, createPackage as dbCreate
 import type { PackageStatus } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
 import { auth } from "firebase-admin";
-import { getAuth } from "firebase/auth";
-import { headers } from "next/headers";
-import { FirebaseError } from "firebase/app";
-import { firebaseConfig } from "@/firebase/config";
-import { initializeApp, getApps } from 'firebase/app';
-import { DecodedIdToken } from "firebase-admin/auth";
+import { getApps, initializeApp } from 'firebase/app';
 import { getFirestore as getClientFirestore } from 'firebase/firestore';
+import { firebaseConfig } from "@/firebase/config";
+import type { DecodedIdToken } from "firebase-admin/auth";
 
-// Helper to get admin SDK
+
+// Helper to get admin SDK for server-side auth verification
 async function getAdminAuth() {
   const { cert } = await import('firebase-admin/app');
   const { getAuth: getAdminAuth } = await import('firebase-admin/auth');
@@ -22,7 +20,7 @@ async function getAdminAuth() {
 
   const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccount) {
-    throw new Error('Missing FIREBASE_SERVICE_ACCOUNT for admin operations.');
+    throw new Error('Missing FIREBASE_SERVICE_ACCOUNT for admin operations. Ensure it is set in your environment variables.');
   }
 
   // Initialize app if not already initialized
@@ -42,21 +40,22 @@ function getFirestore() {
     return getClientFirestore(getApps()[0]);
 }
 
-
-// Helper to get current user on server
+// Helper to get current user on server from an ID token
 async function getCurrentUser(idToken: string): Promise<DecodedIdToken | null> {
-  if (idToken) {
-    try {
-        const adminAuth = await getAdminAuth();
-        const decodedToken = await adminAuth.verifyIdToken(idToken);
-        return decodedToken;
-    } catch (error) {
-        console.error("Error verifying token:", error);
-        return null;
-    }
+  if (!idToken) return null;
+  try {
+    const adminAuth = await getAdminAuth();
+    return await adminAuth.verifyIdToken(idToken);
+  } catch (error) {
+    console.error("Error verifying token:", error);
+    return null;
   }
-  return null;
 }
+
+// Schema for form actions that require authentication
+const authSchema = z.object({
+  idToken: z.string().min(1, "Authentication token is missing."),
+});
 
 const updateStatusSchema = z.object({
   packageId: z.string(),
@@ -65,6 +64,16 @@ const updateStatusSchema = z.object({
 });
 
 export async function updatePackageStatusAction(prevState: any, formData: FormData) {
+    const validatedAuth = authSchema.safeParse({ idToken: formData.get('idToken') });
+    if (!validatedAuth.success) {
+        return { message: 'Authentification requise.', success: false };
+    }
+
+    const user = await getCurrentUser(validatedAuth.data.idToken);
+    if (!user) {
+        return { message: 'Session invalide ou expirée.', success: false };
+    }
+
   try {
     const validatedFields = updateStatusSchema.safeParse({
       packageId: formData.get('packageId'),
@@ -82,14 +91,17 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
     
     const { packageId, status, location } = validatedFields.data;
     const firestore = getFirestore();
-    await dbUpdatePackageStatus(firestore, packageId, status as PackageStatus, location);
+    await dbUpdatePackageStatus(firestore, packageId, status as PackageStatus, location, user.uid);
 
     revalidatePath("/admin");
     revalidatePath(`/admin/package/${packageId}`);
     revalidatePath(`/tracking/${packageId}`);
 
     return { message: `Statut du colis mis à jour en "${status}".`, success: true };
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message.includes('permission-denied')) {
+        return { message: "Permission refusée. Vous n'êtes pas autorisé à modifier ce colis.", success: false };
+    }
     return { message: "Une erreur inattendue est survenue.", success: false };
   }
 }
@@ -101,8 +113,7 @@ const contactSchema = z.object({
     phone: z.string().optional().or(z.literal('')),
 });
 
-const createPackageSchema = z.object({
-  idToken: z.string().min(1, "Authentication token is missing."),
+const createPackageSchema = authSchema.extend({
   senderName: contactSchema.shape.name,
   senderAddress: contactSchema.shape.address,
   senderEmail: contactSchema.shape.email,
@@ -167,6 +178,42 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             success: false,
             errors: null
         }
+    }
+}
+
+
+const deletePackageSchema = authSchema.extend({
+    packageId: z.string().min(1, "Package ID is missing."),
+});
+
+export async function deletePackageAction(prevState: any, formData: FormData) {
+    const validatedAuth = deletePackageSchema.safeParse({ 
+        idToken: formData.get('idToken'),
+        packageId: formData.get('packageId'),
+    });
+
+    if (!validatedAuth.success) {
+        return { message: 'Requête invalide.', success: false };
+    }
+
+    const { idToken, packageId } = validatedAuth.data;
+
+    const user = await getCurrentUser(idToken);
+    if (!user) {
+        return { message: 'Session invalide ou expirée.', success: false };
+    }
+
+    try {
+        const firestore = getFirestore();
+        await dbDeletePackage(firestore, packageId, user.uid);
+        revalidatePath('/admin');
+        return { message: 'Colis supprimé avec succès.', success: true };
+    } catch (error: any) {
+        if (error.message.includes('permission-denied')) {
+            return { message: "Permission refusée. Vous n'êtes pas autorisé à supprimer ce colis.", success: false };
+        }
+        console.error("Error deleting package:", error);
+        return { message: 'La suppression du colis a échoué.', success: false };
     }
 }
 

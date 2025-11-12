@@ -7,7 +7,7 @@ import {
   collection,
   doc,
   getDoc,
-  addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   serverTimestamp,
@@ -15,6 +15,7 @@ import {
   orderBy,
   Timestamp,
   Firestore,
+  where,
 } from 'firebase/firestore';
 
 // Custom event dispatcher to notify about package updates
@@ -38,15 +39,18 @@ function convertTimestamps(data: any): any {
 }
 
 
-// Hook to get packages and subscribe to updates
+// Hook to get packages and subscribe to updates for the current admin
 export function usePackages() {
     const firestore = useFirestore();
-    const packagesQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'packages'), orderBy('createdAt', 'desc'));
-    }, [firestore]);
+    const { user, isUserLoading } = useAuth();
     
-    const { data, isLoading, error } = useCollection<Omit<Package, 'statusHistory' | 'id'> & { statusHistory: any[] }>(packagesQuery);
+    const packagesQuery = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        // Query packages where the adminId matches the current user's UID
+        return query(collection(firestore, 'packages'), where("adminId", "==", user.uid), orderBy('createdAt', 'desc'));
+    }, [firestore, user]);
+    
+    const { data, isLoading: isPackagesLoading, error } = useCollection<Omit<Package, 'statusHistory' | 'id'> & { statusHistory: any[] }>(packagesQuery);
 
     const packages = useMemo(() => {
         if (!data) return [];
@@ -59,7 +63,7 @@ export function usePackages() {
         }
     }, [error]);
 
-    return { packages, isLoading };
+    return { packages, isLoading: isUserLoading || isPackagesLoading };
 }
 
 
@@ -81,7 +85,6 @@ export async function getPackageById(firestore: Firestore, id: string): Promise<
 }
 
 export async function createPackage(firestore: Firestore, pkgData: Omit<Package, 'id' | 'currentStatus' | 'statusHistory' | 'adminId' | 'createdAt'>, adminId: string): Promise<Package> {
-    const packagesCollection = collection(firestore, 'packages');
     
     const statusHistory = [{
         status: 'Pris en charge',
@@ -91,6 +94,8 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
 
     // Generate a 6-character alphanumeric ID
     const newId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const docRef = doc(firestore, 'packages', newId);
+
 
     const newPackageData = {
         ...pkgData,
@@ -101,28 +106,27 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
     };
     
     try {
-        const docRef = doc(firestore, 'packages', newId);
-        await addDoc(packagesCollection, newPackageData);
+        await setDoc(docRef, newPackageData);
         window.dispatchEvent(packageUpdateEvent);
-        return { id: docRef.id, ...pkgData, ...convertTimestamps(newPackageData)} as Package;
+        // We can't return the package with the server timestamp immediately, but we can return the local version
+        return { id: newId, ...pkgData, ...convertTimestamps(newPackageData)} as Package;
     } catch (error) {
         console.error("Error creating package:", error);
         throw error;
     }
 }
 
-export async function updatePackageStatus(firestore: Firestore, id: string, newStatus: PackageStatus, location: string): Promise<Package | null> {
+export async function updatePackageStatus(firestore: Firestore, id: string, newStatus: PackageStatus, location: string, adminId: string): Promise<Package | null> {
     const docRef = doc(firestore, 'packages', id);
 
     try {
         const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
-            return null;
+        if (!docSnap.exists() || docSnap.data().adminId !== adminId) {
+             throw new Error("permission-denied");
         }
 
         const currentPackageData = docSnap.data();
         
-        // Ensure statusHistory is an array
         const currentPackageStatusHistory = Array.isArray(currentPackageData.statusHistory) ? currentPackageData.statusHistory : [];
 
         const newStatusHistoryEntry = {
@@ -149,14 +153,45 @@ export async function updatePackageStatus(firestore: Firestore, id: string, newS
 }
 
 
-export async function deletePackage(firestore: Firestore, id: string): Promise<boolean> {
+export async function deletePackage(firestore: Firestore, id: string, adminId: string): Promise<boolean> {
     const docRef = doc(firestore, "packages", id);
     try {
+         const docSnap = await getDoc(docRef);
+        if (!docSnap.exists() || docSnap.data().adminId !== adminId) {
+             throw new Error("permission-denied");
+        }
         await deleteDoc(docRef);
         window.dispatchEvent(packageUpdateEvent);
         return true;
     } catch (error) {
         console.error("Error deleting package:", error);
-        return false;
+        throw error;
+    }
+}
+
+// Function to create initial user (run from a temporary script or setup page)
+export async function createInitialAdminUser(auth: any, email: string, pass: string) {
+    const { createUserWithEmailAndPassword } = await import("firebase/auth");
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+        console.log("Admin user created:", userCredential.user.uid);
+        
+        const firestore = getFirestore();
+        // Add a document to `admins` collection to mark this user as an admin
+        const adminDocRef = doc(firestore, 'admins', userCredential.user.uid);
+        await setDoc(adminDocRef, {
+            email: userCredential.user.email,
+            createdAt: serverTimestamp()
+        });
+        console.log("Admin role set in Firestore.");
+        
+        return userCredential.user;
+    } catch (error: any) {
+        if (error.code === 'auth/email-already-in-use') {
+            console.log('Admin user already exists.');
+            return null;
+        }
+        console.error("Error creating initial admin user:", error);
+        throw error;
     }
 }

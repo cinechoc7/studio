@@ -26,60 +26,74 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { deletePackage as deletePackageAction } from "@/lib/data";
-import { useTransition } from "react";
+import { deletePackageAction } from "@/lib/actions";
+import { useEffect, useRef, useState, useActionState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore } from "@/firebase";
+import { useAuth } from "@/firebase";
+import { useFormStatus } from "react-dom";
 import { VariantProps } from "class-variance-authority";
 
 type PackageTableProps = {
   packages: Package[];
 };
 
+const initialState = {
+  message: "",
+  success: false,
+};
+
 function DeletePackageDialog({ packageId }: { packageId: string }) {
-    const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
-    const firestore = useFirestore();
-    
-    const handleDelete = () => {
-        startTransition(async () => {
-            const success = await deletePackageAction(firestore, packageId);
-            if (success) {
-                toast({
-                    title: "Colis supprimé",
-                    description: "Le colis a été supprimé avec succès.",
-                });
-            } else {
-                 toast({
-                    title: "Erreur",
-                    description: "La suppression du colis a échoué.",
-                    variant: "destructive",
-                });
+    const auth = useAuth();
+    const [idToken, setIdToken] = useState('');
+    const [open, setOpen] = useState(false);
+    const [state, formAction, isPending] = useActionState(deletePackageAction, initialState);
+
+    useEffect(() => {
+        if (auth.currentUser) {
+            auth.currentUser.getIdToken().then(setIdToken);
+        }
+    }, [auth.currentUser, open]);
+
+
+    useEffect(() => {
+        if (state.message) {
+            toast({
+                title: state.success ? "Succès" : "Erreur",
+                description: state.message,
+                variant: state.success ? 'default' : 'destructive'
+            });
+            if (state.success) {
+                setOpen(false);
             }
-        });
-    };
+        }
+    }, [state, toast]);
 
     return (
-        <AlertDialog>
+        <AlertDialog open={open} onOpenChange={setOpen}>
             <AlertDialogTrigger asChild>
-                <button className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-destructive hover:bg-destructive/10">
+                <div className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-destructive hover:bg-destructive/10">
                    <Trash2 className="mr-2 h-4 w-4" />
                     <span>Supprimer</span>
-                </button>
+                </div>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Cette action est irréversible. Le colis <span className="font-mono text-foreground font-semibold">{packageId}</span> sera définitivement supprimé.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90" disabled={isPending}>
-                        {isPending ? "Suppression..." : "Oui, supprimer"}
-                    </AlertDialogAction>
-                </AlertDialogFooter>
+                <form action={formAction}>
+                    <input type="hidden" name="packageId" value={packageId} />
+                    <input type="hidden" name="idToken" value={idToken} />
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Cette action est irréversible. Le colis <span className="font-mono text-foreground font-semibold">{packageId}</span> sera définitivement supprimé.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-4">
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <Button type="submit" variant="destructive" disabled={isPending}>
+                            {isPending ? "Suppression..." : "Oui, supprimer"}
+                        </Button>
+                    </AlertDialogFooter>
+                </form>
             </AlertDialogContent>
         </AlertDialog>
     );
@@ -114,7 +128,7 @@ export function PackageTable({ packages }: PackageTableProps) {
   if (packages.length === 0) {
     return (
         <Card className="text-center p-12 border-dashed bg-secondary/30">
-             <div className="mx-auto bg-white w-20 h-20 rounded-full flex items-center justify-center shadow-md">
+             <div className="mx-auto bg-card w-20 h-20 rounded-full flex items-center justify-center shadow-md">
                 <PackageIcon className="w-10 h-10 text-muted-foreground" />
             </div>
             <h3 className="mt-6 text-xl font-bold text-primary">Aucun colis pour le moment</h3>
