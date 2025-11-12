@@ -29,15 +29,25 @@ async function createAdminUser() {
     const user = userCredential.user;
     console.log('Successfully created new auth user:', user.uid);
 
-    // Now, let's mark this user as an admin in Firestore
-    const adminDocRef = doc(firestore, 'admins', user.uid);
-    await setDoc(adminDocRef, {
+    // Now, let's mark this user as an admin in Firestore in two places
+    // 1. The 'admins' collection for general user info
+    const adminInfoDocRef = doc(firestore, 'admins', user.uid);
+    await setDoc(adminInfoDocRef, {
       email: user.email,
       createdAt: serverTimestamp()
     });
+    console.log(`Successfully created admin info doc for ${user.uid}.`);
+    
+    // 2. The 'roles_admin' collection to grant the admin role for security rules.
+    const adminRoleDocRef = doc(firestore, 'roles_admin', user.uid);
+    await setDoc(adminRoleDocRef, {
+        isAdmin: true,
+        grantedAt: serverTimestamp()
+    });
+    console.log(`Successfully granted admin role to ${user.uid} in 'roles_admin' collection.`);
 
-    console.log(`Successfully marked user ${user.uid} as admin in Firestore.`);
-    console.log('\nAdmin user created successfully!');
+
+    console.log('\nAdmin user created and role granted successfully!');
     console.log('Email:', email);
     console.log('Password:', password);
 

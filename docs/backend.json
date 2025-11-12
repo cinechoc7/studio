@@ -132,6 +132,27 @@
         "email"
       ]
     },
+     "AdminRole": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminRole",
+      "type": "object",
+      "description": "Represents the admin role for a user. The existence of a document in the corresponding collection signifies that the user has admin privileges.",
+      "properties": {
+        "isAdmin": {
+          "type": "boolean",
+          "description": "A flag indicating if the user is an admin. Should always be true."
+        },
+        "grantedAt": {
+          "type": "string",
+          "description": "The timestamp when the admin role was granted.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "isAdmin",
+        "grantedAt"
+      ]
+    },
     "DeliveryRoutePlan": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "DeliveryRoutePlan",
@@ -265,7 +286,7 @@
         "definition": {
           "entityName": "AdminRole",
           "schema": {
-            "$ref": "#/backend/entities/Admin"
+            "$ref": "#/backend/entities/AdminRole"
           },
           "description": "A document's existence in this collection signifies admin role. Enables checking admin status via `exists()` in rules.",
           "params": [
@@ -277,6 +298,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the package tracking application with distinct user and admin interfaces. It emphasizes authorization independence and facilitates secure list operations. The design incorporates structural segregation, access modeling, and data clarity principles. Crucially, the structure allows tracking packages without user authentication, while providing a secure admin section to manage package details.\n\n*   **/packages/{packageId}**: Stores package information. Includes the `adminId` for ownership and authorization. This allows admins to manage packages assigned to them.\n*   **/package_statuses/{packageStatusId}**: Stores status updates for packages.\n*   **/customers/{customerId}**: Stores customer information.\n*   **/admins/{adminId}**: Stores admin user information. The existence of a document in this collection grants admin privileges.\n*   **/roles_admin/{uid}**: A document's existence in this collection signifies admin role. Using existence over content.\n\n**Authorization Independence and QAPs:**\n\n*   **Authorization Independence:** The `packages` collection contains the `adminId` field, which indicates the administrator responsible for a particular package. This denormalization enables security rules that directly check if the currently authenticated user (`request.auth.uid`) matches the `adminId` without needing to perform a `get()` request to another document. This ensures that authorization checks are atomic and efficient.\n*   **QAPs (Rules are not Filters):** The structure facilitates secure `list` operations. The use of the `/roles_admin/{uid}` collection allows secure listing of packages managed by an admin, or package statuses. The structure avoids filtering based on data content in the rules, maintaining the QAPs principle."
+    "reasoning": "The Firestore data structure is designed to support the package tracking application with distinct user and admin interfaces. It emphasizes authorization independence and facilitates secure list operations. The design incorporates structural segregation, access modeling, and data clarity principles. Crucially, the structure allows tracking packages without user authentication, while providing a secure admin section to manage package details.\n\n*   **/packages/{packageId}**: Stores package information. Includes the `adminId` for ownership and authorization. This allows admins to manage packages assigned to them.\n*   **/package_statuses/{packageStatusId}**: Stores status updates for packages.\n*   **/customers/{customerId}**: Stores customer information.\n*   **/admins/{adminId}**: Stores admin user information.\n*   **/roles_admin/{uid}**: A document's existence in this collection signifies admin role. This is the recommended way to handle roles in Firestore security rules as checking for a document's existence is a very fast operation. Using existence over content.\n\n**Authorization Independence and QAPs:**\n\n*   **Authorization Independence:** The `packages` collection contains the `adminId` field, which indicates the administrator responsible for a particular package. This denormalization enables security rules that directly check if the currently authenticated user (`request.auth.uid`) matches the `adminId` without needing to perform a `get()` request to another document. This ensures that authorization checks are atomic and efficient.\n*   **QAPs (Rules are not Filters):** The structure facilitates secure `list` operations. The use of the `/roles_admin/{uid}` collection allows secure listing of packages managed by an admin. The structure avoids filtering based on data content in the rules, maintaining the QAPs principle."
   }
 }
