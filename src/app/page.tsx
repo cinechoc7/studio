@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="flex flex-col items-center text-center p-6 bg-card rounded-xl shadow-sm">
+    <div className="flex flex-col items-center text-center p-6 bg-card rounded-xl shadow-sm border border-border">
       <div className="p-4 bg-primary/10 rounded-full mb-4">
         {icon}
       </div>
@@ -32,13 +32,13 @@ function Step({ icon, title, description, stepNumber }: { icon: React.ReactNode,
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex flex-col min-h-screen bg-background">
       <header className="p-4 sm:p-6 lg:p-8 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-primary">Colimove</h1>
         <nav className="hidden md:flex gap-6 items-center">
-          <Link href="#features" className="text-sm font-medium text-gray-600 hover:text-primary dark:text-gray-400">Atouts</Link>
-          <Link href="#how-it-works" className="text-sm font-medium text-gray-600 hover:text-primary dark:text-gray-400">Fonctionnement</Link>
-          <Link href="#about" className="text-sm font-medium text-gray-600 hover:text-primary dark:text-gray-400">A propos</Link>
+          <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary">Atouts</Link>
+          <Link href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-primary">Fonctionnement</Link>
+          <Link href="#about" className="text-sm font-medium text-muted-foreground hover:text-primary">A propos</Link>
         </nav>
       </header>
 
@@ -47,15 +47,15 @@ export default function Home() {
             <div className="container px-4 md:px-6">
                 <div className="flex flex-col items-center text-center space-y-8">
                     <div className="space-y-4">
-                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl text-gray-900 dark:text-gray-100">
+                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
                             Suivi de colis simple et rapide.
                         </h1>
-                        <p className="max-w-[700px] mx-auto text-gray-500 md:text-xl dark:text-gray-400">
+                        <p className="max-w-[700px] mx-auto text-muted-foreground md:text-xl">
                             Entrez votre numéro de suivi ci-dessous pour obtenir l'état d'avancement de votre livraison en temps réel.
                         </p>
                     </div>
                     <div className="w-full max-w-lg">
-                        <Card className="shadow-lg border-t-4 border-primary">
+                        <Card className="shadow-lg border-t-4 border-primary bg-secondary">
                             <CardHeader>
                                 <CardTitle className='flex items-center gap-2 text-xl'><Search className='text-primary'/> Suivre un colis</CardTitle>
                             </CardHeader>
@@ -68,7 +68,7 @@ export default function Home() {
             </div>
         </section>
 
-        <section id="features" className="py-16 md:py-24 bg-white dark:bg-gray-900">
+        <section id="features" className="py-16 md:py-24 bg-secondary">
           <div className="container px-4 md:px-6">
             <h2 className="text-3xl font-bold text-center mb-12">Nos atouts pour votre tranquilité</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -117,7 +117,7 @@ export default function Home() {
             </div>
         </section>
 
-        <section id="about" className="py-16 md:py-24 bg-white dark:bg-gray-900">
+        <section id="about" className="py-16 md:py-24 bg-secondary">
           <div className="container px-4 md:px-6 max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-4">À propos de Colimove</h2>
             <p className="text-muted-foreground md:text-lg">
@@ -128,19 +128,19 @@ export default function Home() {
 
       </main>
 
-      <footer className="w-full py-8 px-4 md:px-6 border-t bg-gray-900 text-gray-400">
+      <footer className="w-full py-8 px-4 md:px-6 border-t bg-card">
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-                <h3 className="text-xl font-bold text-white">Colimove</h3>
-                <p className="text-sm">Suivi de colis simple et rapide.</p>
+                <h3 className="text-xl font-bold text-primary">Colimove</h3>
+                <p className="text-sm text-muted-foreground">Suivi de colis simple et rapide.</p>
             </div>
             <nav className="flex gap-6 items-center">
-                <Link href="#features" className="text-sm font-medium hover:text-white">Atouts</Link>
-                <Link href="#how-it-works" className="text-sm font-medium hover:text-white">Fonctionnement</Link>
-                <Link href="#about" className="text-sm font-medium hover:text-white">A propos</Link>
+                <Link href="#features" className="text-sm font-medium hover:text-primary">Atouts</Link>
+                <Link href="#how-it-works" className="text-sm font-medium hover:text-primary">Fonctionnement</Link>
+                <Link href="#about" className="text-sm font-medium hover:text-primary">A propos</Link>
             </nav>
         </div>
-        <div className="mt-8 text-center text-sm">
+        <div className="mt-8 text-center text-sm text-muted-foreground">
             <p>&copy; {new Date().getFullYear()} Colimove. Tous droits réservés.</p>
         </div>
       </footer>

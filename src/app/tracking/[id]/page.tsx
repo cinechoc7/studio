@@ -65,7 +65,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
 
   if (pkg === undefined) {
     return (
-        <main className="flex min-h-screen w-full flex-col items-center justify-center p-4 bg-gray-50">
+        <main className="flex min-h-screen w-full flex-col items-center justify-center p-4 bg-background">
              <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </main>
     )
@@ -74,7 +74,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
 
   if (!pkg) {
     return (
-      <main className="flex min-h-screen w-full flex-col items-center justify-center p-4 bg-gray-50">
+      <main className="flex min-h-screen w-full flex-col items-center justify-center p-4 bg-background">
         <div className="w-full max-w-lg text-center">
             <Alert variant="destructive" className="text-left">
               <AlertCircle className="h-4 w-4" />
@@ -97,7 +97,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
     : 'N/A';
 
   return (
-    <main className="min-h-screen w-full bg-gray-50 dark:bg-gray-950 py-12 sm:py-24">
+    <main className="min-h-screen w-full bg-background py-12 sm:py-24">
         <div className="container mx-auto max-w-4xl px-4">
             <div className="mb-8 flex justify-start">
                 <Button asChild variant="outline" className="bg-card">
@@ -105,7 +105,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
                 </Button>
             </div>
             
-            <Card className="shadow-lg overflow-hidden border-t-4 border-primary">
+            <Card className="shadow-lg overflow-hidden border border-border bg-secondary">
                 <CardHeader className="bg-card p-6">
                     <CardTitle className="text-2xl sm:text-3xl font-bold">
                         Suivi du Colis <span className="text-primary font-mono">#{pkg.id}</span>
@@ -115,10 +115,10 @@ export default function TrackingPage({ params }: TrackingPageProps) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className={`p-6 ${isDelivered ? 'bg-green-50 dark:bg-green-900/20' : 'bg-blue-50 dark:bg-blue-900/20'}`}>
+                    <div className={`p-6 ${isDelivered ? 'bg-green-500/10' : 'bg-primary/10'}`}>
                         <h3 className="font-semibold text-lg flex items-center">
-                            {isDelivered ? <CheckCircle className="mr-3 h-7 w-7 text-green-600"/> : <PackageIcon className="mr-3 h-7 w-7 text-primary"/>}
-                            Statut Actuel: <span className={`ml-2 font-bold ${isDelivered ? 'text-green-700' : 'text-primary'}`}>{pkg.currentStatus}</span>
+                            {isDelivered ? <CheckCircle className="mr-3 h-7 w-7 text-green-400"/> : <PackageIcon className="mr-3 h-7 w-7 text-primary"/>}
+                            Statut Actuel: <span className={`ml-2 font-bold ${isDelivered ? 'text-green-400' : 'text-primary'}`}>{pkg.currentStatus}</span>
                         </h3>
                     </div>
 
