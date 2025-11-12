@@ -17,14 +17,15 @@ type TrackingPageProps = {
 
 export default function TrackingPage({ params }: TrackingPageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
+  const packageId = params.id;
 
   useEffect(() => {
     async function fetchPackage() {
-        const packageData = await getPackageById(params.id);
+        const packageData = await getPackageById(packageId);
         setPkg(packageData);
     }
     fetchPackage();
-  }, [params.id]);
+  }, [packageId]);
 
 
   if (pkg === undefined) {
@@ -44,7 +45,7 @@ export default function TrackingPage({ params }: TrackingPageProps) {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Erreur</AlertTitle>
               <AlertDescription>
-                Aucun colis trouvé avec le code de suivi "{params.id}". Veuillez vérifier le code et réessayer.
+                Aucun colis trouvé avec le code de suivi "{packageId}". Veuillez vérifier le code et réessayer.
               </AlertDescription>
             </Alert>
             <Button asChild variant="link" className="mt-4 text-primary">

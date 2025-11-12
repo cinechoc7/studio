@@ -23,11 +23,12 @@ type AdminPackagePageProps = {
 
 export default function AdminPackagePage({ params }: AdminPackagePageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
+  const packageId = params.id;
   
   useEffect(() => {
     let isMounted = true;
     async function fetchPackage() {
-        const packageData = await getPackageById(params.id);
+        const packageData = await getPackageById(packageId);
         if(isMounted) {
             setPkg(packageData);
         }
@@ -41,7 +42,7 @@ export default function AdminPackagePage({ params }: AdminPackagePageProps) {
         isMounted = false;
         window.removeEventListener('packagesUpdated', handleUpdate);
     };
-  }, [params.id]);
+  }, [packageId]);
 
 
   if (pkg === undefined) {
@@ -59,7 +60,7 @@ export default function AdminPackagePage({ params }: AdminPackagePageProps) {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Erreur</AlertTitle>
           <AlertDescription>
-            Aucun colis trouvé avec le code de suivi "{params.id}".
+            Aucun colis trouvé avec le code de suivi "{packageId}".
           </AlertDescription>
         </Alert>
         <Button asChild variant="link" className="mt-4">
