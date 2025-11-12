@@ -15,10 +15,8 @@ import {
   orderBy,
   Timestamp,
   where,
+  type Firestore,
 } from 'firebase/firestore';
-import { getApps, initializeApp } from 'firebase/app';
-import type { Firestore } from 'firebase/firestore';
-import { firebaseConfig } from '@/firebase/config';
 
 
 function convertTimestamps(data: any): any {
@@ -70,10 +68,10 @@ export function usePackages() {
 
 
 export async function getPackageById(firestore: Firestore, id: string): Promise<Package | undefined> {
-    const docRef = firestore.collection("packages").doc(id);
+    const docRef = doc(firestore, "packages", id);
     try {
-        const docSnap = await docRef.get();
-        if (docSnap.exists) {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
             const data = docSnap.data();
             const convertedData = convertTimestamps(data);
             return { id: docSnap.id, ...convertedData } as Package;
