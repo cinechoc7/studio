@@ -8,10 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { PackageStatus, packageStatuses } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/firebase";
 
 type UpdateStatusFormProps = {
   packageId: string;
@@ -36,14 +35,6 @@ function SubmitButton() {
 export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormProps) {
   const [state, formAction] = useActionState(updatePackageStatusAction, initialState);
   const { toast } = useToast();
-  const auth = useAuth();
-  const [idToken, setIdToken] = useState('');
-
-  useEffect(() => {
-    if (auth.currentUser) {
-        auth.currentUser.getIdToken().then(setIdToken);
-    }
-  }, [auth.currentUser]);
 
   useEffect(() => {
     if(state.message) {
@@ -61,7 +52,6 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="packageId" value={packageId} />
-      <input type="hidden" name="idToken" value={idToken} />
       
       <div className="space-y-2">
         <Label htmlFor="status">Nouveau statut</Label>

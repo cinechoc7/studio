@@ -44,17 +44,8 @@ const initialState = {
 
 function DeletePackageDialog({ packageId }: { packageId: string }) {
     const { toast } = useToast();
-    const auth = useAuth();
-    const [idToken, setIdToken] = useState('');
     const [open, setOpen] = useState(false);
     const [state, formAction, isPending] = useActionState(deletePackageAction, initialState);
-
-    useEffect(() => {
-        if (auth.currentUser) {
-            auth.currentUser.getIdToken().then(setIdToken);
-        }
-    }, [auth.currentUser, open]);
-
 
     useEffect(() => {
         if (state.message) {
@@ -80,7 +71,6 @@ function DeletePackageDialog({ packageId }: { packageId: string }) {
             <AlertDialogContent>
                 <form action={formAction}>
                     <input type="hidden" name="packageId" value={packageId} />
-                    <input type="hidden" name="idToken" value={idToken} />
                     <AlertDialogHeader>
                         <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
                         <AlertDialogDescription>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Package, PackageStatus, ContactInfo } from './types';
-import { useAuth, useFirestore, useCollection, initializeFirebase, useMemoFirebase } from '@/firebase';
+import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import {
   collection,
   doc,
@@ -14,18 +14,16 @@ import {
   query,
   orderBy,
   Timestamp,
-  Firestore,
   where,
 } from 'firebase/firestore';
-import { getApps, initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { firebaseConfig } from '@/firebase/config';
+import type { Firestore } from 'firebase-admin/firestore';
 
-// Custom event dispatcher to notify about package updates
-const packageUpdateEvent = new Event('packagesUpdated');
 
 function convertTimestamps(data: any): any {
   if (data instanceof Timestamp) {
+    return data.toDate();
+  }
+   if (data && typeof data.toDate === 'function') { // For Admin SDK Timestamps
     return data.toDate();
   }
   if (Array.isArray(data)) {
@@ -70,10 +68,10 @@ export function usePackages() {
 
 
 export async function getPackageById(firestore: Firestore, id: string): Promise<Package | undefined> {
-    const docRef = doc(firestore, "packages", id);
+    const docRef = firestore.collection("packages").doc(id);
     try {
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
             const data = docSnap.data();
             const convertedData = convertTimestamps(data);
             return { id: docSnap.id, ...convertedData } as Package;
@@ -95,7 +93,7 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
 
     // Generate a 6-character alphanumeric ID
     const newId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const docRef = doc(firestore, 'packages', newId);
+    const docRef = firestore.collection('packages').doc(newId);
 
 
     const newPackageData = {
@@ -107,12 +105,14 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
     };
     
     try {
-        await setDoc(docRef, newPackageData);
+        await docRef.set(newPackageData);
         // This won't work in a server action, but we keep it for potential client-side calls
         if (typeof window !== 'undefined') {
-            window.dispatchEvent(packageUpdateEvent);
+            window.dispatchEvent(new Event('packagesUpdated'));
         }
-        return { id: newId, ...pkgData, ...convertTimestamps(newPackageData)} as Package;
+        // Admin SDK returns data differently, let's construct the return object manually
+        const createdPackage = { id: newId, ...pkgData, ...newPackageData };
+        return convertTimestamps(createdPackage) as Package;
     } catch (error) {
         console.error("Error creating package:", error);
         throw error;
@@ -120,15 +120,16 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
 }
 
 export async function updatePackageStatus(firestore: Firestore, id: string, newStatus: PackageStatus, location: string, adminId: string): Promise<Package | null> {
-    const docRef = doc(firestore, 'packages', id);
+    const docRef = firestore.collection('packages').doc(id);
 
     try {
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists() || docSnap.data().adminId !== adminId) {
+        const docSnap = await docRef.get();
+        const docData = docSnap.data();
+        if (!docSnap.exists || docData?.adminId !== adminId) {
              throw new Error("permission-denied");
         }
 
-        const currentPackageData = docSnap.data();
+        const currentPackageData = docData;
         
         const currentPackageStatusHistory = Array.isArray(currentPackageData.statusHistory) ? currentPackageData.statusHistory : [];
 
@@ -140,15 +141,15 @@ export async function updatePackageStatus(firestore: Firestore, id: string, newS
 
         const updatedHistory = [newStatusHistoryEntry, ...currentPackageStatusHistory];
 
-        await updateDoc(docRef, {
+        await docRef.update({
             currentStatus: newStatus,
             statusHistory: updatedHistory,
         });
         
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(packageUpdateEvent);
+          window.dispatchEvent(new Event('packagesUpdated'));
         }
-        const updatedDoc = await getDoc(docRef);
+        const updatedDoc = await docRef.get();
         return { id: updatedDoc.id, ...convertTimestamps(updatedDoc.data()) } as Package;
 
     } catch (error) {
@@ -159,46 +160,20 @@ export async function updatePackageStatus(firestore: Firestore, id: string, newS
 
 
 export async function deletePackage(firestore: Firestore, id: string, adminId: string): Promise<boolean> {
-    const docRef = doc(firestore, "packages", id);
+    const docRef = firestore.collection("packages").doc(id);
     try {
-         const docSnap = await getDoc(docRef);
-        if (!docSnap.exists() || docSnap.data().adminId !== adminId) {
+         const docSnap = await docRef.get();
+         const docData = docSnap.data();
+        if (!docSnap.exists || docData?.adminId !== adminId) {
              throw new Error("permission-denied");
         }
-        await deleteDoc(docRef);
+        await docRef.delete();
         if (typeof window !== 'undefined') {
-            window.dispatchEvent(packageUpdateEvent);
+            window.dispatchEvent(new Event('packagesUpdated'));
         }
         return true;
     } catch (error) {
         console.error("Error deleting package:", error);
-        throw error;
-    }
-}
-
-// Function to create initial user (run from a temporary script or setup page)
-export async function createInitialAdminUser(auth: any, email: string, pass: string) {
-    const { createUserWithEmailAndPassword } = await import("firebase/auth");
-    try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-        console.log("Admin user created:", userCredential.user.uid);
-        
-        const firestore = getFirestore();
-        // Add a document to `admins` collection to mark this user as an admin
-        const adminDocRef = doc(firestore, 'admins', userCredential.user.uid);
-        await setDoc(adminDocRef, {
-            email: userCredential.user.email,
-            createdAt: serverTimestamp()
-        });
-        console.log("Admin role set in Firestore.");
-        
-        return userCredential.user;
-    } catch (error: any) {
-        if (error.code === 'auth/email-already-in-use') {
-            console.log('Admin user already exists.');
-            return null;
-        }
-        console.error("Error creating initial admin user:", error);
         throw error;
     }
 }
