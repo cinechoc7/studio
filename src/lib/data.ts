@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Package, PackageStatus, ContactInfo } from './types';
-import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useAuth, useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import {
   collection,
   doc,
@@ -16,7 +16,9 @@ import {
   Timestamp,
   where,
 } from 'firebase/firestore';
-import type { Firestore } from 'firebase-admin/firestore';
+import { getApps, initializeApp } from 'firebase/app';
+import type { Firestore } from 'firebase/firestore';
+import { firebaseConfig } from '@/firebase/config';
 
 
 function convertTimestamps(data: any): any {
@@ -93,7 +95,7 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
 
     // Generate a 6-character alphanumeric ID
     const newId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const docRef = firestore.collection('packages').doc(newId);
+    const docRef = doc(firestore, 'packages', newId);
 
 
     const newPackageData = {
@@ -105,7 +107,7 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
     };
     
     try {
-        await docRef.set(newPackageData);
+        await setDoc(docRef, newPackageData);
         const createdPackage = { id: newId, ...pkgData, ...newPackageData };
         return convertTimestamps(createdPackage) as Package;
     } catch (error) {
@@ -115,10 +117,10 @@ export async function createPackage(firestore: Firestore, pkgData: Omit<Package,
 }
 
 export async function updatePackageStatus(firestore: Firestore, id: string, newStatus: PackageStatus, location: string): Promise<Package | null> {
-    const docRef = firestore.collection('packages').doc(id);
+    const docRef = doc(firestore, 'packages', id);
 
     try {
-        const docSnap = await docRef.get();
+        const docSnap = await getDoc(docRef);
         if (!docSnap.exists) {
              throw new Error("Package not found.");
         }
@@ -135,12 +137,12 @@ export async function updatePackageStatus(firestore: Firestore, id: string, newS
 
         const updatedHistory = [newStatusHistoryEntry, ...currentPackageStatusHistory];
 
-        await docRef.update({
+        await updateDoc(docRef, {
             currentStatus: newStatus,
             statusHistory: updatedHistory,
         });
         
-        const updatedDoc = await docRef.get();
+        const updatedDoc = await getDoc(docRef);
         return { id: updatedDoc.id, ...convertTimestamps(updatedDoc.data()) } as Package;
 
     } catch (error) {
@@ -151,9 +153,9 @@ export async function updatePackageStatus(firestore: Firestore, id: string, newS
 
 
 export async function deletePackage(firestore: Firestore, id: string): Promise<boolean> {
-    const docRef = firestore.collection("packages").doc(id);
+    const docRef = doc(firestore, "packages", id);
     try {
-        await docRef.delete();
+        await deleteDoc(docRef);
         return true;
     } catch (error) {
         console.error("Error deleting package:", error);
