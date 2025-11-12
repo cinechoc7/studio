@@ -3,7 +3,7 @@
 import { TrackingForm } from '@/components/tracking-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, ShieldCheck, Zap, Package, ArrowRight, Star, Plus } from 'lucide-react';
+import { Search, ShieldCheck, Zap, Package, ArrowRight, Star, Plus, Forward } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +14,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
+import { Dhl, Fedex, Ups, LaPoste, Chronopost, Colissimo } from '@/components/carrier-logos';
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
@@ -106,6 +107,21 @@ const testimonials = [
         rating: 5,
         text: "Le meilleur site de suivi de colis, et de loin. Simple, efficace, et pas de publicités envahissantes. C'est exactement ce que je cherchais."
     }
+];
+
+const partners = [
+    { name: 'DHL', logo: <Dhl className="h-8 md:h-10 w-auto" /> },
+    { name: 'FedEx', logo: <Fedex className="h-8 md:h-10 w-auto" /> },
+    { name: 'UPS', logo: <Ups className="h-8 md:h-10 w-auto" /> },
+    { name: 'La Poste', logo: <LaPoste className="h-8 md:h-10 w-auto" /> },
+    { name: 'Chronopost', logo: <Chronopost className="h-8 md:h-10 w-auto" /> },
+    { name: 'Colissimo', logo: <Colissimo className="h-8 md:h-10 w-auto" /> },
+    { name: 'DHL', logo: <Dhl className="h-8 md:h-10 w-auto" /> },
+    { name: 'FedEx', logo: <Fedex className="h-8 md:h-10 w-auto" /> },
+    { name: 'UPS', logo: <Ups className="h-8 md:h-10 w-auto" /> },
+    { name: 'La Poste', logo: <LaPoste className="h-8 md:h-10 w-auto" /> },
+    { name: 'Chronopost', logo: <Chronopost className="h-8 md:h-10 w-auto" /> },
+    { name: 'Colissimo', logo: <Colissimo className="h-8 md:h-10 w-auto" /> },
 ];
 
 export default function Home() {
@@ -213,9 +229,25 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* Partners Section */}
+        <section id="partners" className="py-16 bg-secondary/20 md:py-24">
+            <div className="container px-4 mx-auto md:px-6">
+                <h2 className="mb-12 text-2xl font-bold text-center text-foreground md:text-3xl">Nos partenaires de confiance</h2>
+                <div className="relative overflow-hidden">
+                    <div className="flex animate-scroll group-hover:animation-pause">
+                       {partners.map((partner, index) => (
+                         <div key={index} className="flex-shrink-0 mx-6 w-36 flex justify-center items-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+                           {partner.logo}
+                         </div>
+                       ))}
+                    </div>
+                </div>
+            </div>
+        </section>
         
         {/* Testimonials Section */}
-        <section id="testimonials" className="py-16 bg-secondary/20 md:py-24">
+        <section id="testimonials" className="py-16 bg-background md:py-24">
             <div className="container px-4 mx-auto md:px-6">
                 <h2 className="mb-16 text-3xl font-bold text-center text-foreground md:text-4xl">
                     Ce que nos utilisateurs disent de nous
