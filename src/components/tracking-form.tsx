@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 
 const formSchema = z.object({
   trackingId: z.string().min(1, "Le code de suivi est requis."),
@@ -28,32 +28,36 @@ export function TrackingForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-center space-x-2">
         <FormField
           control={form.control}
           name="trackingId"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex-1">
               <FormLabel className="sr-only">Code de suivi</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Ex: CS123456789FR" 
-                  {...field} 
-                  className="h-14 text-center text-lg"
-                  aria-label="Code de suivi"
-                />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input 
+                    placeholder="Entrez votre numéro de suivi" 
+                    {...field} 
+                    className="h-14 pl-10 text-base"
+                    aria-label="Code de suivi"
+                  />
+                </div>
               </FormControl>
-              <FormMessage />
+              <FormMessage className="absolute"/>
             </FormItem>
           )}
         />
         <Button 
             type="submit" 
-            className="w-full h-14 text-lg font-semibold bg-accent hover:bg-accent/90 text-accent-foreground"
+            className="h-14 !w-14"
+            size="icon"
             disabled={form.formState.isSubmitting}
+            aria-label="Suivre"
         >
-          {form.formState.isSubmitting ? 'Recherche...' : 'Suivre mon colis'}
-          {!form.formState.isSubmitting && <ArrowRight className="ml-2 h-5 w-5" />}
+          {form.formState.isSubmitting ? <ArrowRight className="h-5 w-5 animate-pulse" /> : <ArrowRight className="h-5 w-5" />}
         </Button>
       </form>
     </Form>

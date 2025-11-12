@@ -76,7 +76,7 @@ export function AddPackageDialog() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-primary"><User />Informations de l'Expéditeur</h3>
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Building className="text-primary"/>Informations de l'Expéditeur</h3>
               <div className="space-y-2">
                 <Label htmlFor="senderName">Nom Complet</Label>
                 <Input id="senderName" name="senderName" placeholder="Ex: John Doe" required />
@@ -101,7 +101,7 @@ export function AddPackageDialog() {
 
             {/* Recipient Section */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-primary"><User />Informations du Destinataire</h3>
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><User className="text-primary"/>Informations du Destinataire</h3>
               <div className="space-y-2">
                 <Label htmlFor="recipientName">Nom Complet</Label>
                 <Input id="recipientName" name="recipientName" placeholder="Ex: Jane Smith" required />
@@ -129,7 +129,7 @@ export function AddPackageDialog() {
 
           {/* Itinerary Section */}
           <div className="space-y-4">
-             <h3 className="text-lg font-semibold flex items-center gap-2 text-primary"><MapPin />Itinéraire</h3>
+             <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><MapPin className="text-primary"/>Itinéraire</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="origin">Ville d'origine</Label>

@@ -2,7 +2,7 @@
 'use client';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarInset, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, Map, PackageSearch, LogOut } from "lucide-react";
+import { LayoutDashboard, Map, PackageSearch, LogOut, Package } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/firebase";
@@ -29,9 +29,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <SidebarHeader>
               <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary rounded-lg">
-                    <PackageSearch className="h-8 w-8 text-primary-foreground" />
+                    <Package className="h-8 w-8 text-primary-foreground" />
                   </div>
-                  <h1 className="text-xl font-semibold text-sidebar-foreground">Colis Suivi Pro</h1>
+                  <h1 className="text-xl font-semibold text-sidebar-foreground">Express.PC</h1>
               </div>
           </SidebarHeader>
           <SidebarContent>
@@ -74,7 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </Sidebar>
         <SidebarInset>
-          <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6">
+          <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
               <SidebarTrigger className="md:hidden" />
               <div className="w-full flex-1">
                   {/* Optional Header Content */}

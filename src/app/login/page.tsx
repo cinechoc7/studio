@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Loader2, LogIn } from 'lucide-react';
+import Link from 'next/link';
+import { Package } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -56,16 +58,24 @@ export default function LoginPage() {
   }
   
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm shadow-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-primary">Connexion Admin</CardTitle>
-          <CardDescription>Entrez vos identifiants pour accéder au dashboard.</CardDescription>
+    <main className="flex min-h-screen w-full flex-col items-center justify-center bg-gray-100 dark:bg-gray-950 p-4">
+       <div className="absolute top-8 left-8">
+            <Button asChild variant="outline">
+                <Link href="/" className="flex items-center gap-2">
+                    <Package className="w-5 h-5"/>
+                    <span className="font-semibold">Express.PC</span>
+                </Link>
+            </Button>
+        </div>
+      <Card className="w-full max-w-sm shadow-2xl border-t-4 border-primary">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold">Espace Administrateur</CardTitle>
+          <CardDescription>Entrez vos identifiants pour accéder au tableau de bord.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Adresse e-mail</Label>
               <Input
                 id="email"
                 type="email"
@@ -92,7 +102,7 @@ export default function LoginPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
               Se connecter
             </Button>
