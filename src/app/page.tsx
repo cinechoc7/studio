@@ -1,6 +1,7 @@
 
 
 
+
 import { TrackingForm } from '@/components/tracking-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -220,10 +221,10 @@ export default function Home() {
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="relative w-full h-full">
-                        <div className="absolute top-[20%] left-[15%] w-48 h-32 animate-float-slow">
+                        <div className="absolute top-8 left-8 w-48 h-32 animate-float-slow">
                             <FloatingEnvelope />
                         </div>
-                         <div className="absolute bottom-[25%] right-[10%] w-80 h-64 animate-float-fast">
+                         <div className="absolute bottom-8 right-8 w-80 h-64 animate-float-fast">
                             <FloatingPackage />
                         </div>
                     </div>
