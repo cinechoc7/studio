@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Colis Suivi Pro',
+  title: 'Colimove',
   description: 'Suivez vos colis en temps réel.',
 };
 

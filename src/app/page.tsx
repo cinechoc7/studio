@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-950">
       <header className="p-4 sm:p-6 lg:p-8 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-primary">Express.PC</h1>
+        <h1 className="text-2xl font-bold text-primary">Colimove</h1>
         <nav className="flex gap-6 items-center">
           <Link href="#" className="text-sm font-medium text-gray-600 hover:text-primary dark:text-gray-400">A propos</Link>
           <Link href="#" className="text-sm font-medium text-gray-600 hover:text-primary dark:text-gray-400">Services</Link>
@@ -40,7 +40,7 @@ export default function Home() {
         </div>
       </main>
       <footer className="w-full py-6 px-4 md:px-6 border-t">
-        <p className="text-center text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Express.PC. Tous droits réservés.</p>
+        <p className="text-center text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Colimove. Tous droits réservés.</p>
       </footer>
     </div>
   );

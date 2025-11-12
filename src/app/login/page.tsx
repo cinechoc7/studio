@@ -63,7 +63,7 @@ export default function LoginPage() {
             <Button asChild variant="outline">
                 <Link href="/" className="flex items-center gap-2">
                     <Package className="w-5 h-5"/>
-                    <span className="font-semibold">Express.PC</span>
+                    <span className="font-semibold">Colimove</span>
                 </Link>
             </Button>
         </div>

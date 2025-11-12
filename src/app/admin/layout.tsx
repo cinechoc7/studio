@@ -31,7 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <div className="p-2 bg-primary rounded-lg">
                     <Package className="h-8 w-8 text-primary-foreground" />
                   </div>
-                  <h1 className="text-xl font-semibold text-sidebar-foreground">Express.PC</h1>
+                  <h1 className="text-xl font-semibold text-sidebar-foreground">Colimove</h1>
               </div>
           </SidebarHeader>
           <SidebarContent>
