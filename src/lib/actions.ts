@@ -11,10 +11,10 @@ import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 
 // --- START: Firebase Admin SDK Initialization ---
 if (!getApps().length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT!);
-    initializeApp({
-        credential: cert(serviceAccount)
-    });
+    // This check is important to prevent re-initialization.
+    // In a deployed environment (like Firebase App Hosting), initialization
+    // without credentials will automatically use the service account of the environment.
+    initializeApp();
 }
 const adminAuth = getAdminAuth();
 const firestore = getAdminFirestore();
