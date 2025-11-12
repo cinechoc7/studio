@@ -21,7 +21,7 @@ service cloud.firestore {
       allow read: if isSignedIn() && resource.data.adminId == request.auth.uid;
       // This rule allows a user to list packages if the query includes a `where` clause
       // that filters by their own adminId. This secures the query.
-      allow list: if isSignedIn() && request.query.resource.data.adminId == request.auth.uid;
+      allow list: if isSignedIn() && request.query.where.adminId == request.auth.uid;
       allow create: if isSignedIn() && request.resource.data.adminId == request.auth.uid;
       allow update, delete: if isSignedIn() && resource.data.adminId == request.auth.uid;
     }
