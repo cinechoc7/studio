@@ -168,6 +168,12 @@ export async function updatePackageStatus(firestore: Firestore, id: string, newS
     try {
         const docSnap = await getDoc(docRef);
         if (!docSnap.exists) {
+            const examplePkg = examplePackages.find(p => p.id === id);
+            if (examplePkg) {
+                // This is a mocked update for the example package
+                console.warn("This is an example package. The status update will not be persisted.");
+                return examplePkg;
+            }
              throw new Error("Package not found.");
         }
 
@@ -205,6 +211,12 @@ export async function deletePackage(firestore: Firestore, id: string): Promise<b
         return true;
     } catch (error) {
         console.error("Error deleting package:", error);
+        // Special handling for example packages
+        const examplePkg = examplePackages.find(p => p.id === id);
+        if (examplePkg) {
+            console.warn("This is an example package. Deletion is not persisted.");
+            return true; // Pretend it was deleted
+        }
         throw error;
     }
 }

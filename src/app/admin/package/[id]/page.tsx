@@ -17,44 +17,44 @@ import { useEffect, useState } from "react";
 import type { Package } from "@/lib/types";
 import { Separator } from "@/components/ui/separator";
 import { doc, onSnapshot } from "firebase/firestore";
+import { getPackageById } from "@/lib/data";
 
 type AdminPackagePageProps = {
   params: { id: string };
 };
 
-function convertTimestamps(data: any): any {
-    if (data && typeof data.toDate === 'function') { // Firebase Timestamp
-        return data.toDate();
-    }
-    if (Array.isArray(data)) {
-        return data.map(convertTimestamps);
-    }
-    if (data !== null && typeof data === 'object') {
-        return Object.keys(data).reduce((acc, key) => {
-            acc[key] = convertTimestamps(data[key]);
-            return acc;
-        }, {} as any);
-    }
-    return data;
-}
 
 export default function AdminPackagePage({ params }: AdminPackagePageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
   const packageId = params.id;
   const firestore = useFirestore();
   
-  const packageRef = useMemoFirebase(() => {
-    if (!packageId || !firestore) return null;
-    return doc(firestore, 'packages', packageId);
-  }, [packageId, firestore]);
-
   useEffect(() => {
-    if (!packageRef) return;
+    if (!packageId || !firestore) return;
 
+    // For example packages, we can just fetch them once
+    if (packageId.startsWith('CM')) {
+         const fetchPackage = async () => {
+            const foundPackage = await getPackageById(firestore, packageId);
+            setPkg(foundPackage || null);
+        };
+        fetchPackage();
+        return;
+    }
+
+    // For real packages, set up a real-time listener
+    const packageRef = doc(firestore, 'packages', packageId);
     const unsubscribe = onSnapshot(packageRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        const convertedData = convertTimestamps(data);
+        const convertedData = {
+            ...data,
+            createdAt: data.createdAt?.toDate(),
+            statusHistory: data.statusHistory.map((h: any) => ({
+                ...h,
+                timestamp: h.timestamp?.toDate()
+            }))
+        };
         setPkg({ id: docSnap.id, ...convertedData } as Package);
       } else {
         setPkg(null);
@@ -65,7 +65,7 @@ export default function AdminPackagePage({ params }: AdminPackagePageProps) {
     });
 
     return () => unsubscribe();
-  }, [packageRef]);
+  }, [packageId, firestore]);
 
 
   if (pkg === undefined) {
