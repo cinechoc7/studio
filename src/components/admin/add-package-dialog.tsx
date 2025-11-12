@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createPackageAction } from '@/lib/actions';
-import { Loader2, PlusCircle, User, Mail, Phone, MapPin, Building, PackagePlus } from 'lucide-react';
+import { Loader2, PlusCircle, PackagePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/firebase';
 import type { ContactInfo } from '@/lib/types';
+import { Building, Mail, MapPin, Phone, User } from 'lucide-react';
 
 const initialState = {
   message: '',
@@ -47,37 +48,20 @@ export function AddPackageDialog() {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [lastSender, setLastSender] = useState<ContactInfo | null>(null);
+  const [idToken, setIdToken] = useState('');
 
   useEffect(() => {
-    // Load last sender from localStorage
     const savedSender = localStorage.getItem('lastSender');
     if (savedSender) {
       setLastSender(JSON.parse(savedSender));
     }
   }, []);
 
-  const handleFormAction = async (formData: FormData) => {
-    if (auth.currentUser) {
-        try {
-            const token = await auth.currentUser.getIdToken(true); // Force refresh token
-            formData.set('idToken', token);
-            formAction(formData);
-        } catch (error) {
-            console.error("Error getting id token", error);
-             toast({
-                title: 'Erreur d\'authentification',
-                description: 'Impossible de vérifier votre session. Veuillez vous reconnecter.',
-                variant: 'destructive',
-            });
-        }
-    } else {
-         toast({
-            title: 'Erreur d\'authentification',
-            description: 'Vous n\'êtes pas connecté.',
-            variant: 'destructive',
-        });
+  useEffect(() => {
+    if (open && auth.currentUser) {
+        auth.currentUser.getIdToken(true).then(setIdToken);
     }
-  }
+  }, [open, auth.currentUser]);
 
   useEffect(() => {
     if (state.message) {
@@ -87,7 +71,6 @@ export function AddPackageDialog() {
         variant: state.success ? 'default' : 'destructive',
       });
       if (state.success) {
-        // Get sender data from the submitted form that was successful
         const formData = new FormData(formRef.current!);
         const newSender: ContactInfo = {
             name: formData.get('senderName') as string,
@@ -95,7 +78,6 @@ export function AddPackageDialog() {
             email: formData.get('senderEmail') as string,
             phone: formData.get('senderPhone') as string,
         };
-        // Save to state and localStorage
         setLastSender(newSender);
         localStorage.setItem('lastSender', JSON.stringify(newSender));
         
@@ -121,7 +103,9 @@ export function AddPackageDialog() {
             Remplissez les informations ci-dessous pour enregistrer un nouveau colis et générer son code de suivi.
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} action={handleFormAction} className="space-y-6 pt-4">
+        <form ref={formRef} action={formAction} className="space-y-6 pt-4">
+          <input type="hidden" name="idToken" value={idToken} />
+          <input type="hidden" name="adminId" value={auth.currentUser?.uid || ''} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
             <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">

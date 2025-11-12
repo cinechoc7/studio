@@ -113,7 +113,9 @@ const contactSchema = z.object({
     phone: z.string().optional().or(z.literal('')),
 });
 
-const createPackageSchema = authSchema.extend({
+const createPackageSchema = z.object({
+  idToken: z.string().min(1, "Le jeton d'authentification est manquant."),
+  adminId: z.string().min(1, "L'ID de l'administrateur est manquant."),
   senderName: contactSchema.shape.name,
   senderAddress: contactSchema.shape.address,
   senderEmail: contactSchema.shape.email,
@@ -138,13 +140,13 @@ export async function createPackageAction(prevState: any, formData: FormData) {
         };
     }
 
-    const { idToken, ...packageData } = validatedFields.data;
+    const { idToken, adminId, ...packageData } = validatedFields.data;
 
     const user = await getCurrentUser(idToken);
 
-    if (!user) {
+    if (!user || user.uid !== adminId) {
         return {
-            message: 'Utilisateur non authentifié.',
+            message: 'Utilisateur non authentifié ou invalide.',
             success: false,
             errors: null
         }
