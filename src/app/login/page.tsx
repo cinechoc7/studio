@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/admin');
+    }
+  }, [user, isUserLoading, router]);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,26 +34,8 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await userCredential.user.getIdToken();
-      
-      // Store token in cookie via a server action to make it httpOnly
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (response.ok) {
-        router.push('/admin');
-      } else {
-        const data = await response.json();
-        setError(data.error || "Une erreur est survenue lors de la configuration de la session.");
-        setLoading(false);
-      }
-      
+      await signInWithEmailAndPassword(auth, email, password);
+      // The useEffect will handle the redirect
     } catch (error: any) {
       console.error(error);
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
@@ -56,6 +46,14 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+  
+  if (isUserLoading || (!isUserLoading && user)) {
+    return (
+        <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
   
   return (
     <main className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
