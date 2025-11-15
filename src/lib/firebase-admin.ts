@@ -1,4 +1,3 @@
-'use server';
 
 import { initializeApp, getApps, getApp, App, deleteApp } from 'firebase-admin/app';
 import { credential } from 'firebase-admin';

@@ -73,7 +73,7 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
 }
 
 const createPackageSchema = z.object({
-  adminId: z.string().min(1, "Admin ID is required."),
+  adminId: z.string(),
   senderName: z.string().optional(),
   senderAddress: z.string().optional(),
   senderEmail: z.string().email().optional().or(z.literal('')),
@@ -87,7 +87,7 @@ const createPackageSchema = z.object({
 });
 
 
-export async function createPackageAction(prevState: any, formData: FormData) {
+export async function createPackageAction(formData: FormData) {
     const adminApp = initializeFirebaseAdmin();
     const firestore = getAdminFirestore(adminApp);
 
@@ -96,33 +96,29 @@ export async function createPackageAction(prevState: any, formData: FormData) {
     if (!validatedFields.success) {
         return {
             message: 'Données du formulaire invalides.',
-            errors: validatedFields.error.flatten().fieldErrors,
             success: false,
         };
     }
 
     try {
         const data = validatedFields.data;
-
         const packageId = `CM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}FR`;
-        const docRef = firestore.collection('packages').doc(packageId);
-
-        const initialLocation = data.origin || 'Inconnu';
-        const statusHistory = [{
-            status: 'Pris en charge' as PackageStatus,
-            location: initialLocation,
-            timestamp: FieldValue.serverTimestamp(),
-        }];
         
         const newPackageData: { [key: string]: any } = {
             adminId: data.adminId,
             currentStatus: 'Pris en charge' as PackageStatus,
-            statusHistory: statusHistory,
             createdAt: FieldValue.serverTimestamp(),
+            statusHistory: [
+              {
+                status: 'Pris en charge' as PackageStatus,
+                location: data.origin || 'Inconnu',
+                timestamp: FieldValue.serverTimestamp(),
+              }
+            ],
             sender: {},
-            recipient: {}
+            recipient: {},
         };
-        
+
         if (data.senderName) newPackageData.sender.name = data.senderName;
         if (data.senderAddress) newPackageData.sender.address = data.senderAddress;
         if (data.senderEmail) newPackageData.sender.email = data.senderEmail;
@@ -136,18 +132,17 @@ export async function createPackageAction(prevState: any, formData: FormData) {
         if (data.origin) newPackageData.origin = data.origin;
         if (data.destination) newPackageData.destination = data.destination;
 
-        await docRef.set(newPackageData);
+        await firestore.collection('packages').doc(packageId).set(newPackageData);
         
         revalidatePath("/admin");
 
-        return { message: `Colis ${packageId} créé avec succès.`, success: true, errors: null };
+        return { message: `Colis ${packageId} créé avec succès.`, success: true };
 
     } catch (e: any) {
         console.error("Server Action Error:", e);
         return {
             message: 'une erreur est survenue lors de la creation du colis',
             success: false,
-            errors: null
         }
     }
 }

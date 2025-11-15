@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -24,30 +22,14 @@ import { useAuth } from '@/firebase';
 import type { ContactInfo } from '@/lib/types';
 import { Building, User, MapPin } from 'lucide-react';
 
-const initialState = {
-  message: '',
-  errors: null,
-  success: false,
-};
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto bg-primary hover:bg-primary/90">
-      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackagePlus className="mr-2 h-4 w-4" />}
-      Créer le Colis
-    </Button>
-  );
-}
-
 export function AddPackageDialog() {
   const auth = useAuth();
-  const [state, formAction] = useActionState(createPackageAction, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [lastSender, setLastSender] = useState<ContactInfo | null>(null);
+  const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
     const savedSender = localStorage.getItem('lastSender');
@@ -56,30 +38,36 @@ export function AddPackageDialog() {
     }
   }, []);
 
-  useEffect(() => {
-    if (state.message) {
-      toast({
-        title: state.success ? 'Succès !' : 'Erreur',
-        description: state.message,
-        variant: state.success ? 'default' : 'destructive',
-      });
-      if (state.success) {
-        const formData = new FormData(formRef.current!);
-        const newSender: ContactInfo = {
-            name: formData.get('senderName') as string,
-            address: formData.get('senderAddress') as string,
-            email: formData.get('senderEmail') as string,
-            phone: formData.get('senderPhone') as string,
-        };
-        setLastSender(newSender);
-        localStorage.setItem('lastSender', JSON.stringify(newSender));
-        
-        closeButtonRef.current?.click();
-        formRef.current?.reset();
-        setOpen(false);
-      }
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsPending(true);
+
+    const formData = new FormData(event.currentTarget);
+    const result = await createPackageAction(formData);
+
+    setIsPending(false);
+
+    toast({
+      title: result.success ? 'Succès !' : 'Erreur',
+      description: result.message,
+      variant: result.success ? 'default' : 'destructive',
+    });
+
+    if (result.success) {
+      const newSender: ContactInfo = {
+          name: formData.get('senderName') as string,
+          address: formData.get('senderAddress') as string,
+          email: formData.get('senderEmail') as string,
+          phone: formData.get('senderPhone') as string,
+      };
+      setLastSender(newSender);
+      localStorage.setItem('lastSender', JSON.stringify(newSender));
+      
+      closeButtonRef.current?.click();
+      formRef.current?.reset();
+      setOpen(false);
     }
-  }, [state, toast]);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -96,7 +84,7 @@ export function AddPackageDialog() {
             Remplissez les informations ci-dessous pour enregistrer un nouveau colis. Le code de suivi sera généré automatiquement.
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} action={formAction} className="space-y-6 pt-4">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 pt-4">
           {auth.currentUser && <input type="hidden" name="adminId" value={auth.currentUser.uid} />}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -164,7 +152,10 @@ export function AddPackageDialog() {
             <DialogClose asChild>
                 <Button type="button" variant="outline" ref={closeButtonRef}>Annuler</Button>
             </DialogClose>
-            <SubmitButton />
+             <Button type="submit" disabled={isPending} className="w-full sm:w-auto bg-primary hover:bg-primary/90">
+                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackagePlus className="mr-2 h-4 w-4" />}
+                Créer le Colis
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
