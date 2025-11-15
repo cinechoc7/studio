@@ -5,7 +5,7 @@ import { z } from "zod";
 import { deletePackage as dbDeletePackage } from "./data";
 import type { PackageStatus } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
-import { getApps, initializeApp, type App } from 'firebase-admin/app';
+import { getApps, initializeApp, type App, getApp } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { credential } from 'firebase-admin';
@@ -18,7 +18,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 // --- START: Firebase Admin SDK Initialization ---
 function initializeFirebaseAdmin(): App {
     if (getApps().length > 0) {
-        return getApps()[0];
+        return getApp();
     }
     
     // Check if the service account is available in the environment variables
@@ -136,46 +136,65 @@ export async function createPackageAction(prevState: any, formData: FormData) {
     }
 
     try {
-        const { 
-            adminId,
-            senderName, senderAddress, senderEmail, senderPhone,
-            recipientName, recipientAddress, recipientEmail, recipientPhone,
-            origin, destination
-        } = validatedFields.data;
+        const data = validatedFields.data;
 
         const packageId = `CM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}FR`;
         const docRef = firestore.collection('packages').doc(packageId);
 
+        const initialLocation = data.origin || 'Inconnu';
         const statusHistory = [{
             status: 'Pris en charge' as PackageStatus,
-            location: origin || 'Inconnu',
+            location: initialLocation,
             timestamp: FieldValue.serverTimestamp(),
         }];
 
-        const newPackageData = {
-            adminId,
-            sender: {
-                name: senderName || 'Non spécifié', 
-                address: senderAddress || 'Non spécifiée',
-            },
-            recipient: { 
-                name: recipientName || 'Non spécifié', 
-                address: recipientAddress || 'Non spécifiée',
-            },
-            origin: origin || 'Non spécifié',
-            destination: destination || 'Non spécifié',
+        // Build the data object robustly, only including fields that have values.
+        const newPackageData: Record<string, any> = {
+            adminId: data.adminId,
             currentStatus: 'Pris en charge' as PackageStatus,
             statusHistory: statusHistory,
-            createdAt: FieldValue.serverTimestamp()
+            createdAt: FieldValue.serverTimestamp(),
+            origin: data.origin || 'Non spécifié',
+            destination: data.destination || 'Non spécifié',
+            sender: {
+                name: data.senderName || 'Non spécifié',
+                address: data.senderAddress || 'Non spécifiée',
+            },
+            recipient: {
+                name: data.recipientName || 'Non spécifié',
+                address: data.recipientAddress || 'Non spécifiée',
+            }
         };
-        
-        // Add optional fields only if they have a value
-        if (senderEmail) newPackageData.sender.email = senderEmail;
-        if (senderPhone) newPackageData.sender.phone = senderPhone;
-        if (recipientEmail) newPackageData.recipient.email = recipientEmail;
-        if (recipientPhone) newPackageData.recipient.phone = recipientPhone;
-        
-        await docRef.set(newPackageData);
+
+        if (data.senderEmail) {
+            newPackageData['sender.email'] = data.senderEmail;
+        }
+        if (data.senderPhone) {
+            newPackageData['sender.phone'] = data.senderPhone;
+        }
+        if (data.recipientEmail) {
+            newPackageData['recipient.email'] = data.recipientEmail;
+        }
+        if (data.recipientPhone) {
+            newPackageData['recipient.phone'] = data.recipientPhone;
+        }
+
+        // Use update with dot notation for nested fields
+        const { sender, recipient, ...topLevelData } = newPackageData;
+        const finalData = {
+          ...topLevelData,
+          'sender.name': newPackageData.sender.name,
+          'sender.address': newPackageData.sender.address,
+          'recipient.name': newPackageData.recipient.name,
+          'recipient.address': newPackageData.recipient.address,
+        };
+        if (data.senderEmail) finalData['sender.email'] = data.senderEmail;
+        if (data.senderPhone) finalData['sender.phone'] = data.senderPhone;
+        if (data.recipientEmail) finalData['recipient.email'] = data.recipientEmail;
+        if (data.recipientPhone) finalData['recipient.phone'] = data.recipientPhone;
+
+
+        await docRef.set(finalData);
         
         revalidatePath("/admin");
 
