@@ -113,11 +113,11 @@ const createPackageSchema = z.object({
   adminId: z.string(),
   senderName: z.string().optional(),
   senderAddress: z.string().optional(),
-  senderEmail: z.string().optional(),
+  senderEmail: z.string().email().optional().or(z.literal('')),
   senderPhone: z.string().optional(),
   recipientName: z.string().optional(),
   recipientAddress: z.string().optional(),
-  recipientEmail: z.string().optional(),
+  recipientEmail: z.string().email().optional().or(z.literal('')),
   recipientPhone: z.string().optional(),
   origin: z.string().optional(),
   destination: z.string().optional(),
@@ -143,37 +143,37 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             origin, destination
         } = validatedFields.data;
 
-        // Generate a unique package ID
         const packageId = `CM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}FR`;
-
         const docRef = firestore.collection('packages').doc(packageId);
 
         const statusHistory = [{
-            status: 'Pris en charge',
+            status: 'Pris en charge' as PackageStatus,
             location: origin || 'Inconnu',
             timestamp: FieldValue.serverTimestamp(),
         }];
 
         const newPackageData = {
-            sender: { 
+            adminId,
+            sender: {
                 name: senderName || 'Non spécifié', 
                 address: senderAddress || 'Non spécifiée',
-                ...(senderEmail && { email: senderEmail }),
-                ...(senderPhone && { phone: senderPhone }),
             },
             recipient: { 
                 name: recipientName || 'Non spécifié', 
                 address: recipientAddress || 'Non spécifiée',
-                ...(recipientEmail && { email: recipientEmail }),
-                ...(recipientPhone && { phone: recipientPhone }),
             },
             origin: origin || 'Non spécifié',
             destination: destination || 'Non spécifié',
-            adminId: adminId,
             currentStatus: 'Pris en charge' as PackageStatus,
             statusHistory: statusHistory,
             createdAt: FieldValue.serverTimestamp()
         };
+        
+        // Add optional fields only if they have a value
+        if (senderEmail) newPackageData.sender.email = senderEmail;
+        if (senderPhone) newPackageData.sender.phone = senderPhone;
+        if (recipientEmail) newPackageData.recipient.email = recipientEmail;
+        if (recipientPhone) newPackageData.recipient.phone = recipientPhone;
         
         await docRef.set(newPackageData);
         
@@ -184,7 +184,7 @@ export async function createPackageAction(prevState: any, formData: FormData) {
     } catch (e: any) {
         console.error("Server Action Error:", e);
         return {
-            message: 'Une erreur est survenue lors de la création du colis.',
+            message: 'une erreur est survenue lors de la creation du colis',
             success: false,
             errors: null
         }
@@ -255,8 +255,19 @@ export async function getOptimizedRouteAction(prevState: any, formData: FormData
 }
 
 
-const updatePackageSchema = createPackageSchema.extend({
+const updatePackageSchema = z.object({
   originalPackageId: z.string().min(1, "L'ID original du colis est manquant."),
+  adminId: z.string(),
+  senderName: z.string().optional(),
+  senderAddress: z.string().optional(),
+  senderEmail: z.string().email().optional().or(z.literal('')),
+  senderPhone: z.string().optional(),
+  recipientName: z.string().optional(),
+  recipientAddress: z.string().optional(),
+  recipientEmail: z.string().email().optional().or(z.literal('')),
+  recipientPhone: z.string().optional(),
+  origin: z.string().optional(),
+  destination: z.string().optional(),
 });
 
 
