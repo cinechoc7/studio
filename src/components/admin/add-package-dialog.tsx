@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,25 +18,18 @@ import { createPackageAction } from '@/lib/actions';
 import { Loader2, PlusCircle, PackagePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import type { ContactInfo } from '@/lib/types';
 import { Building, User, MapPin } from 'lucide-react';
 
 export function AddPackageDialog() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [lastSender, setLastSender] = useState<ContactInfo | null>(null);
   const [isPending, setIsPending] = useState(false);
-
-  useEffect(() => {
-    const savedSender = localStorage.getItem('lastSender');
-    if (savedSender) {
-      setLastSender(JSON.parse(savedSender));
-    }
-  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,9 +44,6 @@ export function AddPackageDialog() {
     setIsPending(true);
 
     const formData = new FormData(event.currentTarget);
-    // Manually add adminId to formData
-    formData.set('adminId', auth.currentUser.uid);
-
     const result = await createPackageAction(formData);
 
     setIsPending(false);
@@ -65,15 +55,6 @@ export function AddPackageDialog() {
     });
 
     if (result.success) {
-      const newSender: ContactInfo = {
-          name: formData.get('senderName') as string,
-          address: formData.get('senderAddress') as string,
-          email: formData.get('senderEmail') as string,
-          phone: formData.get('senderPhone') as string,
-      };
-      setLastSender(newSender);
-      localStorage.setItem('lastSender', JSON.stringify(newSender));
-      
       closeButtonRef.current?.click();
       formRef.current?.reset();
       setOpen(false);
@@ -97,25 +78,27 @@ export function AddPackageDialog() {
         </DialogHeader>
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 pt-4">
           
+          <input type="hidden" name="adminId" value={auth.currentUser?.uid || ''} />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
             <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Building className="text-primary"/>Informations de l'Expéditeur</h3>
               <div className="space-y-2">
                 <Label htmlFor="senderName">Nom Complet</Label>
-                <Input id="senderName" name="senderName" placeholder="Ex: John Doe" defaultValue={lastSender?.name} />
+                <Input id="senderName" name="senderName" placeholder="Ex: John Doe" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senderAddress">Adresse Complète</Label>
-                <Input id="senderAddress" name="senderAddress" placeholder="Ex: 123 Rue Principale, 75001 Paris" defaultValue={lastSender?.address} />
+                <Input id="senderAddress" name="senderAddress" placeholder="Ex: 123 Rue Principale, 75001 Paris" />
               </div>
                <div className="space-y-2">
                 <Label htmlFor="senderEmail">Email</Label>
-                <Input id="senderEmail" name="senderEmail" type="email" placeholder="Ex: expediteur@email.com" defaultValue={lastSender?.email} />
+                <Input id="senderEmail" name="senderEmail" type="email" placeholder="Ex: expediteur@email.com" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senderPhone">Téléphone</Label>
-                <Input id="senderPhone" name="senderPhone" type="tel" placeholder="Ex: 0123456789" defaultValue={lastSender?.phone} />
+                <Input id="senderPhone" name="senderPhone" type="tel" placeholder="Ex: 0123456789" />
               </div>
             </div>
 

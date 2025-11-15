@@ -1,14 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { updatePackageStatusAction } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { PackageStatus, packageStatuses } from "@/lib/types";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
@@ -17,40 +15,31 @@ type UpdateStatusFormProps = {
   currentStatus: PackageStatus;
 };
 
-const initialState = {
-  message: "",
-  success: false,
-};
-
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" disabled={pending} className="w-full bg-primary hover:bg-primary/90">
-            {pending ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
-            Mettre à jour
-        </Button>
-    );
-}
 
 export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormProps) {
-  const [state, formAction] = useActionState(updatePackageStatusAction, initialState);
   const { toast } = useToast();
+  const [isPending, setIsPending] = useState(false);
+  
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsPending(true);
+    const formData = new FormData(event.currentTarget);
+    const result = await updatePackageStatusAction(formData);
+    setIsPending(false);
 
-  useEffect(() => {
-    if(state.message) {
-        toast({
-            title: state.success ? "Succès" : "Erreur",
-            description: state.message,
-            variant: state.success ? "default" : "destructive",
-        });
-    }
-  }, [state, toast]);
+    toast({
+        title: result.success ? "Succès" : "Erreur",
+        description: result.message,
+        variant: result.success ? "default" : "destructive",
+    });
+  }
+
 
   // Filter out the current status from the list of options
   const availableStatuses = packageStatuses.filter(status => status !== currentStatus);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="packageId" value={packageId} />
       
       <div className="space-y-2">
@@ -79,7 +68,10 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
         />
       </div>
       
-      <SubmitButton />
+       <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/90">
+            {isPending ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
+            Mettre à jour
+        </Button>
     </form>
   );
 }

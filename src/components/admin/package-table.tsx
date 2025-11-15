@@ -13,11 +13,10 @@ import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Package as PackageIcon, Trash2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
+import { Card, CardContent } from "../ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -27,39 +26,37 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { deletePackageAction } from "@/lib/actions";
-import { useEffect, useRef, useState, useActionState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/firebase";
-import { useFormStatus } from "react-dom";
 import { VariantProps } from "class-variance-authority";
 import { EditPackageDialog } from "./edit-package-dialog";
+import { Loader2 } from "lucide-react";
 
 type PackageTableProps = {
   packages: Package[];
 };
 
-const initialState = {
-  message: "",
-  success: false,
-};
 
 function DeletePackageDialog({ packageId }: { packageId: string }) {
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
-    const [state, formAction, isPending] = useActionState(deletePackageAction, initialState);
+    const [isPending, setIsPending] = useState(false);
 
-    useEffect(() => {
-        if (state.message) {
-            toast({
-                title: state.success ? "Succès" : "Erreur",
-                description: state.message,
-                variant: state.success ? 'default' : 'destructive'
-            });
-            if (state.success) {
-                setOpen(false);
-            }
+    const handleDelete = async () => {
+        setIsPending(true);
+        const result = await deletePackageAction(packageId);
+        setIsPending(false);
+
+        toast({
+            title: result.success ? "Succès" : "Erreur",
+            description: result.message,
+            variant: result.success ? 'default' : 'destructive'
+        });
+
+        if (result.success) {
+            setOpen(false);
         }
-    }, [state, toast]);
+    };
 
     return (
         <AlertDialog open={open} onOpenChange={setOpen}>
@@ -70,21 +67,18 @@ function DeletePackageDialog({ packageId }: { packageId: string }) {
                 </div>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <form action={formAction}>
-                    <input type="hidden" name="packageId" value={packageId} />
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Cette action est irréversible. Le colis <span className="font-mono text-foreground font-semibold">{packageId}</span> sera définitivement supprimé.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="mt-4">
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <Button type="submit" variant="destructive" disabled={isPending}>
-                            {isPending ? "Suppression..." : "Oui, supprimer"}
-                        </Button>
-                    </AlertDialogFooter>
-                </form>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Cette action est irréversible. Le colis <span className="font-mono text-foreground font-semibold">{packageId}</span> sera définitivement supprimé.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="mt-4">
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <Button onClick={handleDelete} variant="destructive" disabled={isPending}>
+                         {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Suppression...</> : "Oui, supprimer"}
+                    </Button>
+                </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
     );
