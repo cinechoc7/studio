@@ -105,23 +105,19 @@ export function AddPackageDialog() {
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Building className="text-primary"/>Informations de l'Expéditeur</h3>
               <div className="space-y-2">
                 <Label htmlFor="senderName">Nom Complet</Label>
-                <Input id="senderName" name="senderName" placeholder="Ex: John Doe" defaultValue={lastSender?.name} required />
-                {state.errors?.senderName && <p className="text-sm text-destructive">{state.errors.senderName}</p>}
+                <Input id="senderName" name="senderName" placeholder="Ex: John Doe" defaultValue={lastSender?.name} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senderAddress">Adresse Complète</Label>
-                <Input id="senderAddress" name="senderAddress" placeholder="Ex: 123 Rue Principale, 75001 Paris" defaultValue={lastSender?.address} required />
-                {state.errors?.senderAddress && <p className="text-sm text-destructive">{state.errors.senderAddress}</p>}
+                <Input id="senderAddress" name="senderAddress" placeholder="Ex: 123 Rue Principale, 75001 Paris" defaultValue={lastSender?.address} />
               </div>
                <div className="space-y-2">
-                <Label htmlFor="senderEmail">Email (Optionnel)</Label>
+                <Label htmlFor="senderEmail">Email</Label>
                 <Input id="senderEmail" name="senderEmail" type="email" placeholder="Ex: expediteur@email.com" defaultValue={lastSender?.email} />
-                {state.errors?.senderEmail && <p className="text-sm text-destructive">{state.errors.senderEmail}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="senderPhone">Téléphone (Optionnel)</Label>
+                <Label htmlFor="senderPhone">Téléphone</Label>
                 <Input id="senderPhone" name="senderPhone" type="tel" placeholder="Ex: 0123456789" defaultValue={lastSender?.phone} />
-                {state.errors?.senderPhone && <p className="text-sm text-destructive">{state.errors.senderPhone}</p>}
               </div>
             </div>
 
@@ -130,23 +126,19 @@ export function AddPackageDialog() {
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><User className="text-primary"/>Informations du Destinataire</h3>
               <div className="space-y-2">
                 <Label htmlFor="recipientName">Nom Complet</Label>
-                <Input id="recipientName" name="recipientName" placeholder="Ex: Jane Smith" required />
-                {state.errors?.recipientName && <p className="text-sm text-destructive">{state.errors.recipientName}</p>}
+                <Input id="recipientName" name="recipientName" placeholder="Ex: Jane Smith" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="recipientAddress">Adresse Complète</Label>
-                <Input id="recipientAddress" name="recipientAddress" placeholder="Ex: 456 Avenue Secondaire, 13000 Marseille" required />
-                {state.errors?.recipientAddress && <p className="text-sm text-destructive">{state.errors.recipientAddress}</p>}
+                <Input id="recipientAddress" name="recipientAddress" placeholder="Ex: 456 Avenue Secondaire, 13000 Marseille" />
               </div>
                <div className="space-y-2">
-                <Label htmlFor="recipientEmail">Email (Optionnel)</Label>
+                <Label htmlFor="recipientEmail">Email</Label>
                 <Input id="recipientEmail" name="recipientEmail" type="email" placeholder="Ex: destinataire@email.com" />
-                {state.errors?.recipientEmail && <p className="text-sm text-destructive">{state.errors.recipientEmail}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="recipientPhone">Téléphone (Optionnel)</Label>
+                <Label htmlFor="recipientPhone">Téléphone</Label>
                 <Input id="recipientPhone" name="recipientPhone" type="tel" placeholder="Ex: 0612345678" />
-                {state.errors?.recipientPhone && <p className="text-sm text-destructive">{state.errors.recipientPhone}</p>}
               </div>
             </div>
           </div>
@@ -159,13 +151,11 @@ export function AddPackageDialog() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="origin">Ville d'origine</Label>
-                    <Input id="origin" name="origin" placeholder="Ex: Paris, France" required />
-                    {state.errors?.origin && <p className="text-sm text-destructive">{state.errors.origin}</p>}
+                    <Input id="origin" name="origin" placeholder="Ex: Paris, France" />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="destination">Ville de destination</Label>
-                    <Input id="destination" name="destination" placeholder="Ex: Marseille, France" required />
-                    {state.errors?.destination && <p className="text-sm text-destructive">{state.errors.destination}</p>}
+                    <Input id="destination" name="destination" placeholder="Ex: Marseille, France" />
                 </div>
             </div>
           </div>

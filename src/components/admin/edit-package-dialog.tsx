@@ -102,23 +102,19 @@ export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogP
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Building className="text-primary"/>Informations de l'Expéditeur</h3>
               <div className="space-y-2">
                 <Label htmlFor="senderName">Nom Complet</Label>
-                <Input id="senderName" name="senderName" defaultValue={pkg.sender.name} required />
-                {state.errors?.senderName && <p className="text-sm text-destructive">{state.errors.senderName}</p>}
+                <Input id="senderName" name="senderName" defaultValue={pkg.sender.name} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senderAddress">Adresse Complète</Label>
-                <Input id="senderAddress" name="senderAddress" defaultValue={pkg.sender.address} required />
-                {state.errors?.senderAddress && <p className="text-sm text-destructive">{state.errors.senderAddress}</p>}
+                <Input id="senderAddress" name="senderAddress" defaultValue={pkg.sender.address} />
               </div>
                <div className="space-y-2">
-                <Label htmlFor="senderEmail">Email (Optionnel)</Label>
+                <Label htmlFor="senderEmail">Email</Label>
                 <Input id="senderEmail" name="senderEmail" type="email" defaultValue={pkg.sender.email} />
-                {state.errors?.senderEmail && <p className="text-sm text-destructive">{state.errors.senderEmail}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="senderPhone">Téléphone (Optionnel)</Label>
+                <Label htmlFor="senderPhone">Téléphone</Label>
                 <Input id="senderPhone" name="senderPhone" type="tel" defaultValue={pkg.sender.phone} />
-                {state.errors?.senderPhone && <p className="text-sm text-destructive">{state.errors.senderPhone}</p>}
               </div>
             </div>
 
@@ -127,23 +123,19 @@ export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogP
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><User className="text-primary"/>Informations du Destinataire</h3>
               <div className="space-y-2">
                 <Label htmlFor="recipientName">Nom Complet</Label>
-                <Input id="recipientName" name="recipientName" defaultValue={pkg.recipient.name} required />
-                {state.errors?.recipientName && <p className="text-sm text-destructive">{state.errors.recipientName}</p>}
+                <Input id="recipientName" name="recipientName" defaultValue={pkg.recipient.name} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="recipientAddress">Adresse Complète</Label>
-                <Input id="recipientAddress" name="recipientAddress" defaultValue={pkg.recipient.address} required />
-                {state.errors?.recipientAddress && <p className="text-sm text-destructive">{state.errors.recipientAddress}</p>}
+                <Input id="recipientAddress" name="recipientAddress" defaultValue={pkg.recipient.address} />
               </div>
                <div className="space-y-2">
-                <Label htmlFor="recipientEmail">Email (Optionnel)</Label>
+                <Label htmlFor="recipientEmail">Email</Label>
                 <Input id="recipientEmail" name="recipientEmail" type="email" defaultValue={pkg.recipient.email} />
-                {state.errors?.recipientEmail && <p className="text-sm text-destructive">{state.errors.recipientEmail}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="recipientPhone">Téléphone (Optionnel)</Label>
+                <Label htmlFor="recipientPhone">Téléphone</Label>
                 <Input id="recipientPhone" name="recipientPhone" type="tel" defaultValue={pkg.recipient.phone} />
-                {state.errors?.recipientPhone && <p className="text-sm text-destructive">{state.errors.recipientPhone}</p>}
               </div>
             </div>
           </div>
@@ -156,13 +148,11 @@ export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogP
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="origin">Ville d'origine</Label>
-                    <Input id="origin" name="origin" defaultValue={pkg.origin} required />
-                    {state.errors?.origin && <p className="text-sm text-destructive">{state.errors.origin}</p>}
+                    <Input id="origin" name="origin" defaultValue={pkg.origin} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="destination">Ville de destination</Label>
-                    <Input id="destination" name="destination" defaultValue={pkg.destination} required />
-                    {state.errors?.destination && <p className="text-sm text-destructive">{state.errors.destination}</p>}
+                    <Input id="destination" name="destination" defaultValue={pkg.destination} />
                 </div>
             </div>
           </div>

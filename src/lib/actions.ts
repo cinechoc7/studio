@@ -9,6 +9,9 @@ import { getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { credential } from 'firebase-admin';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // --- START: Firebase Admin SDK Initialization ---
 function initializeFirebaseAdmin(): App {
@@ -104,26 +107,20 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
   }
 }
 
-const contactSchema = z.object({
-    name: z.string().min(2, "Le nom est requis."),
-    address: z.string().min(5, "L'adresse est requise."),
-    email: z.string().email("L'email est invalide.").optional().or(z.literal('')),
-    phone: z.string().optional().or(z.literal('')),
-});
-
 const createPackageSchema = z.object({
   adminId: z.string().min(1, "L'ID administrateur est manquant."),
-  senderName: contactSchema.shape.name,
-  senderAddress: contactSchema.shape.address,
-  senderEmail: contactSchema.shape.email,
-  senderPhone: contactSchema.shape.phone,
-  recipientName: contactSchema.shape.name,
-  recipientAddress: contactSchema.shape.address,
-  recipientEmail: contactSchema.shape.email,
-  recipientPhone: contactSchema.shape.phone,
-  origin: z.string().min(2, "L'origine est requise."),
-  destination: z.string().min(2, "La destination est requise."),
+  senderName: z.string(),
+  senderAddress: z.string(),
+  senderEmail: z.string(),
+  senderPhone: z.string(),
+  recipientName: z.string(),
+  recipientAddress: z.string(),
+  recipientEmail: z.string(),
+  recipientPhone: z.string(),
+  origin: z.string(),
+  destination: z.string(),
 });
+
 
 export async function createPackageAction(prevState: any, formData: FormData) {
     const validatedFields = createPackageSchema.safeParse(Object.fromEntries(formData.entries()));
