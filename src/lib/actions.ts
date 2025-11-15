@@ -5,16 +5,36 @@ import { z } from "zod";
 import { deletePackage as dbDeletePackage } from "./data";
 import type { PackageStatus } from "./types";
 import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
-import { getApps, initializeApp } from 'firebase-admin/app';
+import { getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import { credential } from 'firebase-admin';
 
 // --- START: Firebase Admin SDK Initialization ---
-if (!getApps().length) {
-    initializeApp();
+function initializeFirebaseAdmin(): App {
+    if (getApps().length > 0) {
+        return getApps()[0];
+    }
+    
+    // Check if the service account is available in the environment variables
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountString) {
+        throw new Error('The FIREBASE_SERVICE_ACCOUNT environment variable is not set. Please add it to your .env.local file.');
+    }
+
+    try {
+        const serviceAccount = JSON.parse(serviceAccountString);
+        return initializeApp({
+            credential: credential.cert(serviceAccount)
+        });
+    } catch (e: any) {
+        throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT: ${e.message}`);
+    }
 }
-const adminAuth = getAdminAuth();
-const firestore = getAdminFirestore();
+
+const adminApp = initializeFirebaseAdmin();
+const adminAuth = getAdminAuth(adminApp);
+const firestore = getAdminFirestore(adminApp);
 // --- END: Firebase Admin SDK Initialization ---
 
 
