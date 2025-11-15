@@ -20,9 +20,8 @@ service cloud.firestore {
     }
 
     match /packages/{packageId} {
-      // Allow read access to a specific package if the user is an admin and owns the package.
-      // Note: This rule is for direct `get` requests. Listing is handled by the `list` rule.
-      allow get: if isSignedIn() && isAdmin() && resource.data.adminId == request.auth.uid;
+      // Allow public read for package tracking page
+      allow get: if true;
       
       // Allow an admin to LIST packages, but ONLY if their query includes a filter for their own adminId.
       // This is a critical security measure to prevent admins from listing all packages.
@@ -53,3 +52,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
