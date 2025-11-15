@@ -17,12 +17,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createPackageAction } from '@/lib/actions';
-import { Loader2, PlusCircle, PackagePlus, Barcode } from 'lucide-react';
+import { Loader2, PlusCircle, PackagePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/firebase';
 import type { ContactInfo } from '@/lib/types';
-import { Building, Mail, MapPin, Phone, User } from 'lucide-react';
+import { Building, User, MapPin } from 'lucide-react';
 
 const initialState = {
   message: '',
@@ -93,21 +93,12 @@ export function AddPackageDialog() {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl text-foreground"> <PackagePlus className="text-primary"/> Créer un nouveau colis</DialogTitle>
           <DialogDescription>
-            Remplissez les informations ci-dessous pour enregistrer un nouveau colis et générer son code de suivi.
+            Remplissez les informations ci-dessous pour enregistrer un nouveau colis. Le code de suivi sera généré automatiquement.
           </DialogDescription>
         </DialogHeader>
         <form ref={formRef} action={formAction} className="space-y-6 pt-4">
           {auth.currentUser && <input type="hidden" name="adminId" value={auth.currentUser.uid} />}
           
-           <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
-                <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Barcode className="text-primary"/>Code de suivi</h3>
-                 <div className="space-y-2">
-                    <Label htmlFor="packageId">Code de suivi (ID du colis)</Label>
-                    <Input id="packageId" name="packageId" placeholder="Ex: CM123456789FR" required />
-                    {state.errors?.packageId && <p className="text-sm text-destructive">{state.errors.packageId}</p>}
-                </div>
-            </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
             <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">

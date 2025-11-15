@@ -112,7 +112,6 @@ const contactSchema = z.object({
 });
 
 const createPackageSchema = z.object({
-  packageId: z.string().min(3, "Le code de suivi est requis et doit contenir au moins 3 caractères.").regex(/^[a-zA-Z0-9-]+$/, "Le code de suivi ne peut contenir que des lettres, des chiffres et des tirets."),
   adminId: z.string().min(1, "L'ID administrateur est manquant."),
   senderName: contactSchema.shape.name,
   senderAddress: contactSchema.shape.address,
@@ -139,19 +138,16 @@ export async function createPackageAction(prevState: any, formData: FormData) {
 
     try {
         const { 
-            packageId,
             adminId,
             senderName, senderAddress, senderEmail, senderPhone,
             recipientName, recipientAddress, recipientEmail, recipientPhone,
             origin, destination
         } = validatedFields.data;
 
-        const docRef = firestore.collection('packages').doc(packageId);
+        // Generate a unique package ID
+        const packageId = `CM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}FR`;
 
-        const docSnap = await docRef.get();
-        if (docSnap.exists) {
-            throw new Error(`Le colis avec le code "${packageId}" existe déjà.`);
-        }
+        const docRef = firestore.collection('packages').doc(packageId);
 
         const statusHistory = [{
             status: 'Pris en charge',
@@ -173,19 +169,11 @@ export async function createPackageAction(prevState: any, formData: FormData) {
         await docRef.set(newPackageData);
         
         revalidatePath("/admin");
-        revalidatePath(`/tracking/${packageId}`);
 
         return { message: `Colis ${packageId} créé avec succès.`, success: true, errors: null };
 
     } catch (e: any) {
         console.error("Server Action Error:", e);
-        if (e.message.includes('existe déjà')) {
-             return {
-                message: e.message,
-                success: false,
-                errors: { packageId: [`Ce code de colis existe déjà.`] }
-            }
-        }
         return {
             message: 'Une erreur est survenue lors de la création du colis.',
             success: false,
@@ -276,7 +264,6 @@ export async function updatePackageAction(prevState: any, formData: FormData) {
 
   const {
     originalPackageId,
-    packageId,
     adminId,
     senderName, senderAddress, senderEmail, senderPhone,
     recipientName, recipientAddress, recipientEmail, recipientPhone,
@@ -285,67 +272,22 @@ export async function updatePackageAction(prevState: any, formData: FormData) {
 
   try {
     const pkgRef = firestore.collection('packages').doc(originalPackageId);
-
-    // If the ID is being changed, we need to move the document.
-    // Firestore doesn't have a 'move' operation, so we do a get/set/delete.
-    if (originalPackageId !== packageId) {
-      const newPkgRef = firestore.collection('packages').doc(packageId);
-
-      // Check if the new ID already exists to prevent overwriting
-      const newDocSnap = await newPkgRef.get();
-      if (newDocSnap.exists) {
-        throw new Error(`Le code de colis "${packageId}" existe déjà.`);
-      }
-
-      const originalDoc = await pkgRef.get();
-      if (!originalDoc.exists) {
-        throw new Error("Le colis original n'a pas été trouvé.");
-      }
-      const originalData = originalDoc.data()!;
-
-      const updatedData = {
-        ...originalData,
+    
+    const updatedFields = {
         sender: { name: senderName, address: senderAddress, email: senderEmail || undefined, phone: senderPhone || undefined },
         recipient: { name: recipientName, address: recipientAddress, email: recipientEmail || undefined, phone: recipientPhone || undefined },
         origin,
         destination,
         adminId,
-      };
-
-      // Perform the move in a batch write for atomicity
-      const batch = firestore.batch();
-      batch.set(newPkgRef, updatedData);
-      batch.delete(pkgRef);
-      await batch.commit();
-
-    } else {
-      // If the ID is the same, just update the document
-      const updatedFields = {
-        sender: { name: senderName, address: senderAddress, email: senderEmail || undefined, phone: senderPhone || undefined },
-        recipient: { name: recipientName, address: recipientAddress, email: recipientEmail || undefined, phone: recipientPhone || undefined },
-        origin,
-        destination,
-        adminId,
-      };
-      await pkgRef.update(updatedFields);
-    }
+    };
+    await pkgRef.update(updatedFields);
     
     revalidatePath("/admin");
     revalidatePath(`/admin/package/${originalPackageId}`);
-    if (originalPackageId !== packageId) {
-      revalidatePath(`/admin/package/${packageId}`);
-    }
 
-    return { message: `Colis ${packageId} mis à jour avec succès.`, success: true, errors: null };
+    return { message: `Colis ${originalPackageId} mis à jour avec succès.`, success: true, errors: null };
   } catch (error: any) {
     console.error("Error in updatePackageAction:", error);
-     if (error.message.includes('existe déjà')) {
-        return {
-            message: error.message,
-            success: false,
-            errors: { packageId: [error.message] }
-        }
-    }
     return { message: error.message || 'Une erreur est survenue lors de la mise à jour.', success: false, errors: null };
   }
 }

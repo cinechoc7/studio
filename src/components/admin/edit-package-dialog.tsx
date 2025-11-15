@@ -17,12 +17,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updatePackageAction } from '@/lib/actions';
-import { Loader2, PackagePlus, Barcode, Pencil } from 'lucide-react';
+import { Loader2, Barcode, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/firebase';
 import type { Package } from '@/lib/types';
-import { Building, Mail, MapPin, Phone, User } from 'lucide-react';
+import { Building, MapPin, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const initialState = {
@@ -75,7 +75,7 @@ export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogP
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl text-foreground"> <Pencil className="text-primary"/> Modifier le colis</DialogTitle>
           <DialogDescription>
-            Modifiez les informations du colis. Le code de suivi peut également être modifié.
+            Modifiez les informations du colis. Le code de suivi ne peut pas être modifié.
           </DialogDescription>
         </DialogHeader>
         { isExamplePackage ? (
@@ -91,9 +91,8 @@ export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogP
            <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
                 <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Barcode className="text-primary"/>Code de suivi</h3>
                  <div className="space-y-2">
-                    <Label htmlFor="packageId">Code de suivi (ID du colis)</Label>
-                    <Input id="packageId" name="packageId" defaultValue={pkg.id} required />
-                    {state.errors?.packageId && <p className="text-sm text-destructive">{state.errors.packageId}</p>}
+                    <Label htmlFor="packageId">Code de suivi (non modifiable)</Label>
+                    <Input id="packageId" name="packageId" defaultValue={pkg.id} readOnly disabled />
                 </div>
             </div>
 
