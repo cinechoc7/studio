@@ -69,8 +69,7 @@ async function createAdminUser() {
     console.log('Email:', email);
     console.log('Password:', password, '(if newly created)');
 
-  } catch (error: any) {
-      console.error('Error creating or updating admin user:', error.message);
+  } catch (error: any)      console.error('Error creating or updating admin user:', error.message);
   } finally {
     // This script can hang if Firebase connections are not closed.
     // Using process.exit() is a forceful way to ensure it terminates.
