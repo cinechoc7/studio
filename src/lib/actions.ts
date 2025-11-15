@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { PackageStatus } from "./types";
-import { getFirestore, doc, getDoc, updateDoc, setDoc, deleteDoc } from "firebase/firestore";
-import { initializeFirebase } from "@/firebase";
+import { getFirestore, doc, updateDoc, setDoc, deleteDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import { initializeFirebaseAdmin } from "@/firebase/server";
+
 
 const updateStatusSchema = z.object({
   packageId: z.string(),
@@ -13,7 +14,7 @@ const updateStatusSchema = z.object({
 });
 
 export async function updatePackageStatusAction(formData: FormData) {
-  const { firestore } = initializeFirebase();
+  const { firestore } = initializeFirebaseAdmin();
   
   try {
     const validatedFields = updateStatusSchema.safeParse({
@@ -78,7 +79,7 @@ const createPackageSchema = z.object({
 });
 
 export async function createPackageAction(formData: FormData) {
-    const { firestore } = initializeFirebase();
+    const { firestore } = initializeFirebaseAdmin();
 
     const validatedFields = createPackageSchema.safeParse(Object.fromEntries(formData.entries()));
 
@@ -98,7 +99,7 @@ export async function createPackageAction(formData: FormData) {
 
         const newPackageData = {
             id: packageId,
-            adminId: "demo-user", // No more adminId logic
+            adminId: "demo-user", 
             currentStatus: 'Pris en charge' as PackageStatus,
             createdAt: now,
             statusHistory: [
@@ -140,7 +141,7 @@ export async function createPackageAction(formData: FormData) {
 }
 
 export async function deletePackageAction(packageId: string) {
-    const { firestore } = initializeFirebase();
+    const { firestore } = initializeFirebaseAdmin();
     
     if (!packageId) {
         return { message: 'Requête invalide, ID du colis manquant.', success: false };
@@ -170,7 +171,7 @@ const updatePackageSchema = z.object({
 });
 
 export async function updatePackageAction(prevState: any, formData: FormData) {
-  const { firestore } = initializeFirebase();
+  const { firestore } = initializeFirebaseAdmin();
   
   const validatedFields = updatePackageSchema.safeParse(Object.fromEntries(formData.entries()));
 
