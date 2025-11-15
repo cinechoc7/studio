@@ -67,7 +67,7 @@ export async function updatePackageStatusAction(formData: FormData) {
 
 
 const createPackageSchema = z.object({
-  adminId: z.string().min(1, "Admin ID is required."),
+  adminId: z.string(),
   senderName: z.string().optional(),
   senderAddress: z.string().optional(),
   senderEmail: z.string().email().optional().or(z.literal('')),
@@ -102,7 +102,7 @@ export async function createPackageAction(formData: FormData) {
 
         const newPackageData = {
             id: packageId,
-            adminId: data.adminId,
+            adminId: "demo-user", // No more adminId logic
             currentStatus: 'Pris en charge' as PackageStatus,
             createdAt: now,
             statusHistory: [
@@ -163,7 +163,6 @@ export async function deletePackageAction(packageId: string) {
 
 const updatePackageSchema = z.object({
   originalPackageId: z.string().min(1, "L'ID original du colis est manquant."),
-  adminId: z.string(),
   senderName: z.string().optional(),
   senderAddress: z.string().optional(),
   senderEmail: z.string().email().optional().or(z.literal('')),
@@ -192,7 +191,6 @@ export async function updatePackageAction(prevState: any, formData: FormData) {
 
   const {
     originalPackageId,
-    adminId,
     senderName, senderAddress, senderEmail, senderPhone,
     recipientName, recipientAddress, recipientEmail, recipientPhone,
     origin, destination

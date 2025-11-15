@@ -5,25 +5,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LayoutDashboard, LogOut, Package, PanelLeft, Search } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/firebase";
-import { useRouter } from "next/navigation";
-import { AuthGuard } from "@/components/auth-guard";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from '@/components/ui/input';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const auth = useAuth();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
-
-  const handleSignOut = async () => {
-    try {
-      await auth.signOut();
-      router.push('/login');
-    } catch (error) {
-      console.error("Error signing out: ", error);
-    }
-  };
   
   const NavContent = ({isMobile = false}: {isMobile?: boolean}) => (
     <nav className="flex flex-col h-full">
@@ -50,15 +36,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 mt-auto border-t border-sidebar-border">
             <div className="flex items-center gap-3 p-2 rounded-lg bg-muted">
                 <Avatar className="h-10 w-10 border-2 border-primary">
-                    <AvatarImage src={`https://i.pravatar.cc/150?u=${auth.currentUser?.email}`} alt="Admin" />
-                    <AvatarFallback>{auth.currentUser?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={`https://i.pravatar.cc/150?u=admin`} alt="Admin" />
+                    <AvatarFallback>A</AvatarFallback>
                 </Avatar>
                 <div className="text-sm overflow-hidden">
                     <p className="font-semibold text-foreground truncate">Admin</p>
-                    <p className="text-xs text-muted-foreground/70 truncate">{auth.currentUser?.email}</p>
+                    <p className="text-xs text-muted-foreground/70 truncate">admin@colimove.com</p>
                 </div>
-                 <Button variant="ghost" size="icon" className="w-8 h-8 ml-auto rounded-full hover:bg-black/30 shrink-0" onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4" />
+                 <Button variant="ghost" size="icon" className="w-8 h-8 ml-auto rounded-full hover:bg-black/30 shrink-0" asChild>
+                    <Link href="/">
+                        <LogOut className="h-4 w-4" />
+                    </Link>
                 </Button>
             </div>
         </div>
@@ -86,7 +74,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   return (
-    <AuthGuard>
       <div className="flex min-h-screen w-full bg-background text-foreground">
         {DesktopNav}
         <div className="flex flex-col flex-1 sm:ml-64">
@@ -106,6 +93,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <main className="flex-1 p-4 bg-secondary/20 sm:p-6">{children}</main>
         </div>
       </div>
-    </AuthGuard>
   );
 }

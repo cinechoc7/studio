@@ -18,13 +18,9 @@ import { createPackageAction } from '@/lib/actions';
 import { Loader2, PlusCircle, PackagePlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
-import { useAuth, useFirestore } from '@/firebase';
-import type { ContactInfo } from '@/lib/types';
 import { Building, User, MapPin } from 'lucide-react';
 
 export function AddPackageDialog() {
-  const auth = useAuth();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -33,14 +29,6 @@ export function AddPackageDialog() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!auth.currentUser) {
-        toast({
-            title: 'Erreur',
-            description: "Vous devez être connecté pour créer un colis.",
-            variant: 'destructive',
-        });
-        return;
-    }
     setIsPending(true);
 
     const formData = new FormData(event.currentTarget);
@@ -78,7 +66,7 @@ export function AddPackageDialog() {
         </DialogHeader>
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 pt-4">
           
-          <input type="hidden" name="adminId" value={auth.currentUser?.uid || ''} />
+          <input type="hidden" name="adminId" value="demo-user" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}

@@ -1,33 +1,12 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Rules for packages
-    match /packages/{packageId} {
-      // Allow any signed-in user to do anything for demo purposes.
-      allow read, write: if isSignedIn();
-    }
-    
-    // Rules for package statuses
-    match /package_statuses/{packageStatusId} {
-        // Allow any signed-in user to do anything for demo purposes.
-        allow read, write: if isSignedIn();
-    }
-    
-    // Admin info collection - only readable/writable by the admin themselves.
-    match /admins/{adminId} {
-        allow read, write: if isSignedIn() && request.auth.uid == adminId;
-    }
-
-    // Role management collection - only readable/writable by the admin themselves.
-    match /roles_admin/{uid} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
+    // WARNING: These rules are completely open. 
+    // Any user can read, write, and delete any data.
+    // This is for demonstration purposes only.
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

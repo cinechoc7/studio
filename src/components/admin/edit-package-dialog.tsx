@@ -20,7 +20,6 @@ import { updatePackageAction } from '@/lib/actions';
 import { Loader2, Barcode, Pencil } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
-import { useAuth } from '@/firebase';
 import type { Package } from '@/lib/types';
 import { Building, MapPin, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -47,7 +46,6 @@ interface EditPackageDialogProps {
 }
 
 export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogProps) {
-  const auth = useAuth();
   const [state, formAction] = useActionState(updatePackageAction, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
@@ -68,7 +66,7 @@ export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogP
     }
   }, [state, toast]);
   
-  const isExamplePackage = pkg.id.startsWith('CM');
+  const isExamplePackage = pkg.id.startsWith('CM') && pkg.adminId === 'dummy-admin-id';
 
   const dialogContent = (
     <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -86,7 +84,6 @@ export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogP
         ) : (
         <form ref={formRef} action={formAction} className="space-y-6 pt-4">
           <input type="hidden" name="originalPackageId" value={pkg.id} />
-          {auth.currentUser && <input type="hidden" name="adminId" value={auth.currentUser.uid} />}
           
            <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
                 <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Barcode className="text-primary"/>Code de suivi</h3>

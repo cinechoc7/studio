@@ -2,21 +2,15 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Package, PackageStatus, ContactInfo } from './types';
-import { useAuth, useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import {
   collection,
   doc,
   getDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
   query,
   orderBy,
   Timestamp,
-  where,
   type Firestore,
-  FieldValue,
 } from 'firebase/firestore';
 
 
@@ -39,7 +33,7 @@ function convertTimestamps(data: any): any {
 const examplePackages: Package[] = [
     {
         id: 'CM123456789FR',
-        adminId: 'dummy-admin-id',
+        adminId: 'demo-user',
         sender: { name: 'Boutique de Gadgets', address: '123 Rue de l\'Innovation, 75002 Paris' },
         recipient: { name: 'Jean Dupont', address: '45 Avenue des Champs-Élysées, 75008 Paris' },
         origin: 'Paris, France',
@@ -56,7 +50,7 @@ const examplePackages: Package[] = [
     },
     {
         id: 'CM987654321FR',
-        adminId: 'dummy-admin-id',
+        adminId: 'demo-user',
         sender: { name: 'Librairie Le Savoir', address: '15 Rue de la Paix, 75001 Paris' },
         recipient: { name: 'Marie Curie', address: '22 Rue de la Liberté, 13001 Marseille' },
         origin: 'Paris, France',
@@ -72,18 +66,17 @@ const examplePackages: Package[] = [
 ];
 
 
-// Hook to get packages and subscribe to updates for the current admin
+// Hook to get packages and subscribe to updates
 export function usePackages() {
     const firestore = useFirestore();
-    const { user, isUserLoading } = useUser();
     
     const packagesQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
+        if (!firestore) return null;
         // Query all packages, ordered by creation date
         return query(collection(firestore, 'packages'), orderBy("createdAt", "desc"));
-    }, [firestore, user]);
+    }, [firestore]);
     
-    const { data, isLoading: isPackagesLoading, error } = useCollection<Omit<Package, 'statusHistory' | 'id'> & { statusHistory: any[] }>(packagesQuery);
+    const { data, isLoading, error } = useCollection<Omit<Package, 'statusHistory' | 'id'> & { statusHistory: any[] }>(packagesQuery);
 
     const packages = useMemo(() => {
         if (!data) return [];
@@ -103,9 +96,6 @@ export function usePackages() {
             console.error("Error fetching packages:", error);
         }
     }, [error]);
-
-    // Combine loading states: still loading if user is loading OR if packages are loading
-    const isLoading = isUserLoading || (!!user && isPackagesLoading);
 
     return { packages, isLoading };
 }
