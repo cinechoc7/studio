@@ -6,7 +6,6 @@ import type { PackageStatus } from "./types";
 import { getFirestore, doc, getDoc, updateDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { initializeFirebase } from "@/firebase";
 
-
 const updateStatusSchema = z.object({
   packageId: z.string(),
   status: z.string(),
@@ -65,7 +64,6 @@ export async function updatePackageStatusAction(formData: FormData) {
   }
 }
 
-
 const createPackageSchema = z.object({
   senderName: z.string().optional(),
   senderAddress: z.string().optional(),
@@ -78,7 +76,6 @@ const createPackageSchema = z.object({
   origin: z.string().optional(),
   destination: z.string().optional(),
 });
-
 
 export async function createPackageAction(formData: FormData) {
     const { firestore } = initializeFirebase();
@@ -142,7 +139,6 @@ export async function createPackageAction(formData: FormData) {
     }
 }
 
-
 export async function deletePackageAction(packageId: string) {
     const { firestore } = initializeFirebase();
     
@@ -159,7 +155,6 @@ export async function deletePackageAction(packageId: string) {
     }
 }
 
-
 const updatePackageSchema = z.object({
   originalPackageId: z.string().min(1, "L'ID original du colis est manquant."),
   senderName: z.string().optional(),
@@ -173,7 +168,6 @@ const updatePackageSchema = z.object({
   origin: z.string().optional(),
   destination: z.string().optional(),
 });
-
 
 export async function updatePackageAction(prevState: any, formData: FormData) {
   const { firestore } = initializeFirebase();

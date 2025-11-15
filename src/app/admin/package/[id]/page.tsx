@@ -1,5 +1,5 @@
 'use client';
-import { useFirestore, useMemoFirebase } from "@/firebase";
+import { useFirestore } from "@/firebase";
 import {
   Card,
   CardContent,
@@ -8,25 +8,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Loader2, User, Mail, Phone, Home, Pencil } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { UpdateStatusForm } from "@/components/admin/update-status-form";
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import type { Package } from "@/lib/types";
-import { Separator } from "@/components/ui/separator";
 import { doc, onSnapshot } from "firebase/firestore";
 import { getPackageById } from "@/lib/data";
 import { EditPackageDialog } from "@/components/admin/edit-package-dialog";
+import { User, Mail, Phone } from "lucide-react";
 
 type AdminPackagePageProps = {
   params: { id: string };
 };
 
-
-export default function AdminPackagePage({ params: paramsProp }: AdminPackagePageProps) {
-  const params = use(paramsProp);
+export default function AdminPackagePage({ params }: AdminPackagePageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
   const packageId = params.id;
   const firestore = useFirestore();
@@ -34,28 +32,29 @@ export default function AdminPackagePage({ params: paramsProp }: AdminPackagePag
   useEffect(() => {
     if (!packageId || !firestore) return;
 
-    // For example packages, we can just fetch them once
+    const fetchPackage = async () => {
+      if (packageId.startsWith('CM')) {
+        const foundPackage = await getPackageById(firestore, packageId);
+        setPkg(foundPackage || null);
+      }
+    };
+
     if (packageId.startsWith('CM')) {
-         const fetchPackage = async () => {
-            const foundPackage = await getPackageById(firestore, packageId);
-            setPkg(foundPackage || null);
-        };
-        fetchPackage();
-        return;
+      fetchPackage();
+      return;
     }
 
-    // For real packages, set up a real-time listener
     const packageRef = doc(firestore, 'packages', packageId);
     const unsubscribe = onSnapshot(packageRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         const convertedData = {
-            ...data,
-            createdAt: data.createdAt?.toDate(),
-            statusHistory: data.statusHistory.map((h: any) => ({
-                ...h,
-                timestamp: h.timestamp?.toDate()
-            }))
+          ...data,
+          createdAt: data.createdAt?.toDate(),
+          statusHistory: data.statusHistory.map((h: any) => ({
+            ...h,
+            timestamp: h.timestamp?.toDate()
+          }))
         };
         setPkg({ id: docSnap.id, ...convertedData } as Package);
       } else {
@@ -68,7 +67,6 @@ export default function AdminPackagePage({ params: paramsProp }: AdminPackagePag
 
     return () => unsubscribe();
   }, [packageId, firestore]);
-
 
   if (pkg === undefined) {
     return (

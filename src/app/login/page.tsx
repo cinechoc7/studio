@@ -3,8 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { Package } from 'lucide-react';
@@ -14,6 +12,7 @@ export default function LoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    // No auth logic, just redirect
     router.push('/admin');
   };
   
