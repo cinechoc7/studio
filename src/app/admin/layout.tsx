@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, Map, LogOut, Package, PanelLeft, Search } from "lucide-react";
+import { LayoutDashboard, LogOut, Package, PanelLeft, Search } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/firebase";
@@ -42,14 +42,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <Link href="/admin" onClick={() => isMobile && setOpen(false)}>
                             <LayoutDashboard />
                             <span>Dashboard</span>
-                        </Link>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                        <Link href="/admin/optimize" onClick={() => isMobile && setOpen(false)}>
-                            <Map />
-                            <span>Optimiser la route</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>

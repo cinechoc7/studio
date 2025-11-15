@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { deletePackage as dbDeletePackage } from "./data";
 import type { PackageStatus } from "./types";
-import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
 import { getApps, initializeApp, type App, getApp } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
@@ -148,53 +147,31 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             timestamp: FieldValue.serverTimestamp(),
         }];
 
-        // Build the data object robustly, only including fields that have values.
         const newPackageData: Record<string, any> = {
             adminId: data.adminId,
             currentStatus: 'Pris en charge' as PackageStatus,
             statusHistory: statusHistory,
             createdAt: FieldValue.serverTimestamp(),
-            origin: data.origin || 'Non spécifié',
-            destination: data.destination || 'Non spécifié',
-            sender: {
-                name: data.senderName || 'Non spécifié',
-                address: data.senderAddress || 'Non spécifiée',
-            },
-            recipient: {
-                name: data.recipientName || 'Non spécifié',
-                address: data.recipientAddress || 'Non spécifiée',
-            }
         };
 
-        if (data.senderEmail) {
-            newPackageData['sender.email'] = data.senderEmail;
-        }
-        if (data.senderPhone) {
-            newPackageData['sender.phone'] = data.senderPhone;
-        }
-        if (data.recipientEmail) {
-            newPackageData['recipient.email'] = data.recipientEmail;
-        }
-        if (data.recipientPhone) {
-            newPackageData['recipient.phone'] = data.recipientPhone;
-        }
+        const sender: Record<string, any> = {};
+        if (data.senderName) sender.name = data.senderName;
+        if (data.senderAddress) sender.address = data.senderAddress;
+        if (data.senderEmail) sender.email = data.senderEmail;
+        if (data.senderPhone) sender.phone = data.senderPhone;
+        newPackageData.sender = sender;
 
-        // Use update with dot notation for nested fields
-        const { sender, recipient, ...topLevelData } = newPackageData;
-        const finalData = {
-          ...topLevelData,
-          'sender.name': newPackageData.sender.name,
-          'sender.address': newPackageData.sender.address,
-          'recipient.name': newPackageData.recipient.name,
-          'recipient.address': newPackageData.recipient.address,
-        };
-        if (data.senderEmail) finalData['sender.email'] = data.senderEmail;
-        if (data.senderPhone) finalData['sender.phone'] = data.senderPhone;
-        if (data.recipientEmail) finalData['recipient.email'] = data.recipientEmail;
-        if (data.recipientPhone) finalData['recipient.phone'] = data.recipientPhone;
+        const recipient: Record<string, any> = {};
+        if (data.recipientName) recipient.name = data.recipientName;
+        if (data.recipientAddress) recipient.address = data.recipientAddress;
+        if (data.recipientEmail) recipient.email = data.recipientEmail;
+        if (data.recipientPhone) recipient.phone = data.recipientPhone;
+        newPackageData.recipient = recipient;
 
+        if (data.origin) newPackageData.origin = data.origin;
+        if (data.destination) newPackageData.destination = data.destination;
 
-        await docRef.set(finalData);
+        await docRef.set(newPackageData);
         
         revalidatePath("/admin");
 
@@ -232,44 +209,6 @@ export async function deletePackageAction(prevState: any, formData: FormData) {
         return { message: 'Colis supprimé avec succès.', success: true };
     } catch (error: any) {
         return { message: error.message || 'La suppression du colis a échoué.', success: false };
-    }
-}
-
-
-const optimizeRouteSchema = z.object({
-    origin: z.string().min(1, 'Origin is required'),
-    destination: z.string().min(1, 'Destination is required'),
-    waypoints: z.string(),
-    currentTrafficConditions: z.string().min(1, 'Traffic conditions are required'),
-    currentweatherConditions: z.string().min(1, 'Weather conditions are required'),
-});
-
-export async function getOptimizedRouteAction(prevState: any, formData: FormData) {
-    try {
-        const validatedFields = optimizeRouteSchema.safeParse(Object.fromEntries(formData.entries()));
-
-        if (!validatedFields.success) {
-            return {
-                message: 'Invalid form data.',
-                errors: validatedFields.error.flatten().fieldErrors,
-                data: null,
-            };
-        }
-
-        const result = await optimizeDeliveryRoute(validatedFields.data);
-
-        return {
-            message: 'Route optimized successfully.',
-            errors: null,
-            data: result,
-        };
-
-    } catch (e) {
-        return {
-            message: 'An AI error occurred. Please try again.',
-            errors: null,
-            data: null,
-        }
     }
 }
 
