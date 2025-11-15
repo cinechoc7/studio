@@ -2,28 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { deletePackage as dbDeletePackage } from "./data";
 import type { PackageStatus } from "./types";
-import { getApps, initializeApp, type App, getApp } from 'firebase-admin/app';
+import { getApps, initializeApp, type App, getApp, deleteApp } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { credential } from 'firebase-admin';
-import dotenv from 'dotenv';
-import path from 'path';
 
-// Load environment variables from .env.local
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-
-// --- START: Firebase Admin SDK Initialization ---
+// --- Firebase Admin SDK Helper ---
 function initializeFirebaseAdmin(): App {
-    if (getApps().length > 0) {
+    // We need to check if there are any apps initialized.
+    // If there are, and we are in a development environment with hot-reloading,
+    // we might have lingering apps. We should use the existing one or clean up.
+    if (getApps().length) {
         return getApp();
     }
     
-    // Check if the service account is available in the environment variables
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!serviceAccountString) {
-        throw new Error('The FIREBASE_SERVICE_ACCOUNT environment variable is not set. Please add it to your .env.local file.');
+        throw new Error('The FIREBASE_SERVICE_ACCOUNT environment variable is not set. This is required for server-side actions.');
     }
 
     try {
@@ -32,14 +27,9 @@ function initializeFirebaseAdmin(): App {
             credential: credential.cert(serviceAccount)
         });
     } catch (e: any) {
-        throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT: ${e.message}`);
+        throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT. Make sure it's a valid JSON string. Error: ${e.message}`);
     }
 }
-
-const adminApp = initializeFirebaseAdmin();
-const adminAuth = getAdminAuth(adminApp);
-const firestore = getAdminFirestore(adminApp);
-// --- END: Firebase Admin SDK Initialization ---
 
 
 const updateStatusSchema = z.object({
@@ -49,6 +39,9 @@ const updateStatusSchema = z.object({
 });
 
 export async function updatePackageStatusAction(prevState: any, formData: FormData) {
+  const adminApp = initializeFirebaseAdmin();
+  const firestore = getAdminFirestore(adminApp);
+  
   try {
     const validatedFields = updateStatusSchema.safeParse({
       packageId: formData.get('packageId'),
@@ -68,7 +61,6 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
 
     const docRef = firestore.collection('packages').doc(packageId);
 
-    // Use a transaction to read and write for consistency
     await firestore.runTransaction(async (transaction) => {
       const docSnap = await transaction.get(docRef);
       if (!docSnap.exists) {
@@ -81,14 +73,12 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
         timestamp: FieldValue.serverTimestamp(),
       };
 
-      // Prepend the new status to the existing history array
       transaction.update(docRef, {
         currentStatus: status,
         statusHistory: FieldValue.arrayUnion(newStatusHistoryEntry)
       });
     });
     
-    // After updating, prepend the new status to the history
     const docSnap = await docRef.get();
     const pkgData = docSnap.data();
     if(pkgData) {
@@ -109,7 +99,7 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
 }
 
 const createPackageSchema = z.object({
-  adminId: z.string(),
+  adminId: z.string().min(1, "Admin ID is required."),
   senderName: z.string().optional(),
   senderAddress: z.string().optional(),
   senderEmail: z.string().email().optional().or(z.literal('')),
@@ -124,6 +114,9 @@ const createPackageSchema = z.object({
 
 
 export async function createPackageAction(prevState: any, formData: FormData) {
+    const adminApp = initializeFirebaseAdmin();
+    const firestore = getAdminFirestore(adminApp);
+
     const validatedFields = createPackageSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -146,27 +139,25 @@ export async function createPackageAction(prevState: any, formData: FormData) {
             location: initialLocation,
             timestamp: FieldValue.serverTimestamp(),
         }];
-
-        const newPackageData: Record<string, any> = {
+        
+        const newPackageData: { [key: string]: any } = {
             adminId: data.adminId,
             currentStatus: 'Pris en charge' as PackageStatus,
             statusHistory: statusHistory,
             createdAt: FieldValue.serverTimestamp(),
+            sender: {},
+            recipient: {}
         };
-
-        const sender: Record<string, any> = {};
-        if (data.senderName) sender.name = data.senderName;
-        if (data.senderAddress) sender.address = data.senderAddress;
-        if (data.senderEmail) sender.email = data.senderEmail;
-        if (data.senderPhone) sender.phone = data.senderPhone;
-        newPackageData.sender = sender;
-
-        const recipient: Record<string, any> = {};
-        if (data.recipientName) recipient.name = data.recipientName;
-        if (data.recipientAddress) recipient.address = data.recipientAddress;
-        if (data.recipientEmail) recipient.email = data.recipientEmail;
-        if (data.recipientPhone) recipient.phone = data.recipientPhone;
-        newPackageData.recipient = recipient;
+        
+        if (data.senderName) newPackageData.sender.name = data.senderName;
+        if (data.senderAddress) newPackageData.sender.address = data.senderAddress;
+        if (data.senderEmail) newPackageData.sender.email = data.senderEmail;
+        if (data.senderPhone) newPackageData.sender.phone = data.senderPhone;
+        
+        if (data.recipientName) newPackageData.recipient.name = data.recipientName;
+        if (data.recipientAddress) newPackageData.recipient.address = data.recipientAddress;
+        if (data.recipientEmail) newPackageData.recipient.email = data.recipientEmail;
+        if (data.recipientPhone) newPackageData.recipient.phone = data.recipientPhone;
 
         if (data.origin) newPackageData.origin = data.origin;
         if (data.destination) newPackageData.destination = data.destination;
@@ -193,6 +184,9 @@ const deletePackageSchema = z.object({
 });
 
 export async function deletePackageAction(prevState: any, formData: FormData) {
+    const adminApp = initializeFirebaseAdmin();
+    const firestore = getAdminFirestore(adminApp);
+    
     const validatedAuth = deletePackageSchema.safeParse({ 
         packageId: formData.get('packageId'),
     });
@@ -204,7 +198,7 @@ export async function deletePackageAction(prevState: any, formData: FormData) {
     const { packageId } = validatedAuth.data;
 
     try {
-        await dbDeletePackage(firestore, packageId);
+        await firestore.collection("packages").doc(packageId).delete();
         revalidatePath('/admin');
         return { message: 'Colis supprimé avec succès.', success: true };
     } catch (error: any) {
@@ -230,6 +224,9 @@ const updatePackageSchema = z.object({
 
 
 export async function updatePackageAction(prevState: any, formData: FormData) {
+  const adminApp = initializeFirebaseAdmin();
+  const firestore = getAdminFirestore(adminApp);
+  
   const validatedFields = updatePackageSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
@@ -261,18 +258,12 @@ export async function updatePackageAction(prevState: any, formData: FormData) {
         adminId,
     };
 
-    // Conditionally add email and phone fields to avoid saving undefined
-    if (senderEmail) updatedFields['sender.email'] = senderEmail;
-    else updatedFields['sender.email'] = FieldValue.delete();
-    
-    if (senderPhone) updatedFields['sender.phone'] = senderPhone;
-    else updatedFields['sender.phone'] = FieldValue.delete();
-    
-    if (recipientEmail) updatedFields['recipient.email'] = recipientEmail;
-    else updatedFields['recipient.email'] = FieldValue.delete();
-    
-    if (recipientPhone) updatedFields['recipient.phone'] = recipientPhone;
-    else updatedFields['recipient.phone'] = FieldValue.delete();
+    // Use dot notation for updating nested fields.
+    // Use FieldValue.delete() to remove fields if they are empty.
+    updatedFields['sender.email'] = senderEmail ? senderEmail : FieldValue.delete();
+    updatedFields['sender.phone'] = senderPhone ? senderPhone : FieldValue.delete();
+    updatedFields['recipient.email'] = recipientEmail ? recipientEmail : FieldValue.delete();
+    updatedFields['recipient.phone'] = recipientPhone ? recipientPhone : FieldValue.delete();
 
     await pkgRef.update(updatedFields);
     

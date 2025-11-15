@@ -99,7 +99,7 @@ export function usePackages() {
 
         const allPackages = sortedData.map(pkg => convertTimestamps(pkg) as Package);
 
-        // If the database returns no packages, show the example packages.
+        // If the database returns no packages for this admin, show the example packages.
         if (allPackages.length === 0) {
             return examplePackages;
         }
@@ -140,23 +140,5 @@ export async function getPackageById(firestore: Firestore, id: string): Promise<
     } catch (error) {
         console.error("Error getting package by ID:", error);
         return undefined;
-    }
-}
-
-
-export async function deletePackage(firestore: any, id: string): Promise<boolean> {
-    const docRef = firestore.collection("packages").doc(id);
-    try {
-        await docRef.delete();
-        return true;
-    } catch (error) {
-        console.error("Error deleting package:", error);
-        // Special handling for example packages
-        const examplePkg = examplePackages.find(p => p.id === id);
-        if (examplePkg) {
-            console.warn("This is an example package. Deletion is not persisted.");
-            return true; // Pretend it was deleted
-        }
-        throw error;
     }
 }
