@@ -40,9 +40,20 @@ export function AddPackageDialog() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!auth.currentUser) {
+        toast({
+            title: 'Erreur',
+            description: "Vous devez être connecté pour créer un colis.",
+            variant: 'destructive',
+        });
+        return;
+    }
     setIsPending(true);
 
     const formData = new FormData(event.currentTarget);
+    // Manually add adminId to formData
+    formData.set('adminId', auth.currentUser.uid);
+
     const result = await createPackageAction(formData);
 
     setIsPending(false);
@@ -85,7 +96,6 @@ export function AddPackageDialog() {
           </DialogDescription>
         </DialogHeader>
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 pt-4">
-          {auth.currentUser && <input type="hidden" name="adminId" value={auth.currentUser.uid} />}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}

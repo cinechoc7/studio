@@ -24,9 +24,6 @@ function convertTimestamps(data: any): any {
   if (data instanceof Timestamp) {
     return data.toDate();
   }
-   if (data && typeof data.toDate === 'function') { // For Admin SDK Timestamps
-    return data.toDate();
-  }
   if (Array.isArray(data)) {
     return data.map(convertTimestamps);
   }

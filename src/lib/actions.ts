@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { PackageStatus } from "./types";
-import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
-import { initializeFirebaseAdmin } from "./firebase-admin";
+import { getFirestore, doc, runTransaction, FieldValue, getDoc, arrayUnion, serverTimestamp, collection, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { initializeFirebase } from "@/firebase";
+
 
 const updateStatusSchema = z.object({
   packageId: z.string(),
@@ -13,8 +14,7 @@ const updateStatusSchema = z.object({
 });
 
 export async function updatePackageStatusAction(prevState: any, formData: FormData) {
-  const adminApp = initializeFirebaseAdmin();
-  const firestore = getAdminFirestore(adminApp);
+  const { firestore } = initializeFirebase();
   
   try {
     const validatedFields = updateStatusSchema.safeParse({
@@ -33,32 +33,35 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
     
     const { packageId, status, location } = validatedFields.data;
 
-    const docRef = firestore.collection('packages').doc(packageId);
+    const docRef = doc(firestore, 'packages', packageId);
 
-    await firestore.runTransaction(async (transaction) => {
+    await runTransaction(firestore, async (transaction) => {
       const docSnap = await transaction.get(docRef);
-      if (!docSnap.exists) {
+      if (!docSnap.exists()) {
         throw new Error("Package not found.");
       }
 
       const newStatusHistoryEntry = {
         status: status,
         location: location,
-        timestamp: FieldValue.serverTimestamp(),
+        timestamp: new Date(), // Use client-side date for simplicity here, will be converted by serverTimestamp
       };
 
       transaction.update(docRef, {
         currentStatus: status,
-        statusHistory: FieldValue.arrayUnion(newStatusHistoryEntry)
+        statusHistory: arrayUnion(newStatusHistoryEntry)
       });
     });
     
-    const docSnap = await docRef.get();
+    // Sort the history array after update
+    const docSnap = await getDoc(docRef);
     const pkgData = docSnap.data();
     if(pkgData) {
-        const history = pkgData.statusHistory || [];
-        history.sort((a: any, b: any) => b.timestamp.toMillis() - a.timestamp.toMillis());
-        await docRef.update({ statusHistory: history });
+        const history = (pkgData.statusHistory || []).map((h: any) => ({...h, timestamp: h.timestamp.toDate ? h.timestamp.toDate() : h.timestamp}));
+        history.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        await updateDoc(docRef, { 
+            statusHistory: history.map(h => ({...h, timestamp: serverTimestamp()}))
+        });
     }
 
     revalidatePath("/admin");
@@ -72,8 +75,9 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
   }
 }
 
+
 const createPackageSchema = z.object({
-  adminId: z.string(),
+  adminId: z.string().min(1, "Admin ID is required."),
   senderName: z.string().optional(),
   senderAddress: z.string().optional(),
   senderEmail: z.string().email().optional().or(z.literal('')),
@@ -88,12 +92,12 @@ const createPackageSchema = z.object({
 
 
 export async function createPackageAction(formData: FormData) {
-    const adminApp = initializeFirebaseAdmin();
-    const firestore = getAdminFirestore(adminApp);
+    const { firestore } = initializeFirebase();
 
     const validatedFields = createPackageSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
+        console.error("Validation failed:", validatedFields.error.flatten());
         return {
             message: 'Données du formulaire invalides.',
             success: false,
@@ -105,34 +109,35 @@ export async function createPackageAction(formData: FormData) {
         const packageId = `CM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}FR`;
         
         const newPackageData: { [key: string]: any } = {
+            id: packageId,
             adminId: data.adminId,
             currentStatus: 'Pris en charge' as PackageStatus,
-            createdAt: FieldValue.serverTimestamp(),
+            createdAt: serverTimestamp(),
             statusHistory: [
               {
                 status: 'Pris en charge' as PackageStatus,
                 location: data.origin || 'Inconnu',
-                timestamp: FieldValue.serverTimestamp(),
+                timestamp: serverTimestamp(),
               }
             ],
-            sender: {},
-            recipient: {},
+            sender: {
+                name: data.senderName || 'Non spécifié',
+                address: data.senderAddress || 'Non spécifiée',
+            },
+            recipient: {
+                name: data.recipientName || 'Non spécifié',
+                address: data.recipientAddress || 'Non spécifiée',
+            },
+            origin: data.origin || 'Non spécifié',
+            destination: data.destination || 'Non spécifié',
         };
 
-        if (data.senderName) newPackageData.sender.name = data.senderName;
-        if (data.senderAddress) newPackageData.sender.address = data.senderAddress;
         if (data.senderEmail) newPackageData.sender.email = data.senderEmail;
         if (data.senderPhone) newPackageData.sender.phone = data.senderPhone;
-        
-        if (data.recipientName) newPackageData.recipient.name = data.recipientName;
-        if (data.recipientAddress) newPackageData.recipient.address = data.recipientAddress;
         if (data.recipientEmail) newPackageData.recipient.email = data.recipientEmail;
         if (data.recipientPhone) newPackageData.recipient.phone = data.recipientPhone;
 
-        if (data.origin) newPackageData.origin = data.origin;
-        if (data.destination) newPackageData.destination = data.destination;
-
-        await firestore.collection('packages').doc(packageId).set(newPackageData);
+        await setDoc(doc(firestore, 'packages', packageId), newPackageData);
         
         revalidatePath("/admin");
 
@@ -141,7 +146,7 @@ export async function createPackageAction(formData: FormData) {
     } catch (e: any) {
         console.error("Server Action Error:", e);
         return {
-            message: 'une erreur est survenue lors de la creation du colis',
+            message: e.message || 'une erreur est survenue lors de la creation du colis',
             success: false,
         }
     }
@@ -153,8 +158,7 @@ const deletePackageSchema = z.object({
 });
 
 export async function deletePackageAction(prevState: any, formData: FormData) {
-    const adminApp = initializeFirebaseAdmin();
-    const firestore = getAdminFirestore(adminApp);
+    const { firestore } = initializeFirebase();
     
     const validatedAuth = deletePackageSchema.safeParse({ 
         packageId: formData.get('packageId'),
@@ -167,7 +171,7 @@ export async function deletePackageAction(prevState: any, formData: FormData) {
     const { packageId } = validatedAuth.data;
 
     try {
-        await firestore.collection("packages").doc(packageId).delete();
+        await deleteDoc(doc(firestore, "packages", packageId));
         revalidatePath('/admin');
         return { message: 'Colis supprimé avec succès.', success: true };
     } catch (error: any) {
@@ -193,8 +197,7 @@ const updatePackageSchema = z.object({
 
 
 export async function updatePackageAction(prevState: any, formData: FormData) {
-  const adminApp = initializeFirebaseAdmin();
-  const firestore = getAdminFirestore(adminApp);
+  const { firestore } = initializeFirebase();
   
   const validatedFields = updatePackageSchema.safeParse(Object.fromEntries(formData.entries()));
 
@@ -215,7 +218,7 @@ export async function updatePackageAction(prevState: any, formData: FormData) {
   } = validatedFields.data;
 
   try {
-    const pkgRef = firestore.collection('packages').doc(originalPackageId);
+    const pkgRef = doc(firestore, 'packages', originalPackageId);
     
      const updatedFields: Record<string, any> = {
         'sender.name': senderName || 'Non spécifié',
@@ -228,13 +231,13 @@ export async function updatePackageAction(prevState: any, formData: FormData) {
     };
 
     // Use dot notation for updating nested fields.
-    // Use FieldValue.delete() to remove fields if they are empty.
-    updatedFields['sender.email'] = senderEmail ? senderEmail : FieldValue.delete();
-    updatedFields['sender.phone'] = senderPhone ? senderPhone : FieldValue.delete();
-    updatedFields['recipient.email'] = recipientEmail ? recipientEmail : FieldValue.delete();
-    updatedFields['recipient.phone'] = recipientPhone ? recipientPhone : FieldValue.delete();
+    // Use a special value to remove fields if they are empty, but since we are not using admin SDK anymore, we just update with empty string or not include them
+    updatedFields['sender.email'] = senderEmail || "";
+    updatedFields['sender.phone'] = senderPhone || "";
+    updatedFields['recipient.email'] = recipientEmail || "";
+    updatedFields['recipient.phone'] = recipientPhone || "";
 
-    await pkgRef.update(updatedFields);
+    await updateDoc(pkgRef, updatedFields);
     
     revalidatePath("/admin");
     revalidatePath(`/admin/package/${originalPackageId}`);
