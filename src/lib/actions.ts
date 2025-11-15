@@ -10,8 +10,10 @@ import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/fi
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { credential } from 'firebase-admin';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// Load environment variables from .env.local
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 // --- START: Firebase Admin SDK Initialization ---
 function initializeFirebaseAdmin(): App {
@@ -108,17 +110,17 @@ export async function updatePackageStatusAction(prevState: any, formData: FormDa
 }
 
 const createPackageSchema = z.object({
-  adminId: z.string().min(1, "L'ID administrateur est manquant."),
-  senderName: z.string(),
-  senderAddress: z.string(),
-  senderEmail: z.string(),
-  senderPhone: z.string(),
-  recipientName: z.string(),
-  recipientAddress: z.string(),
-  recipientEmail: z.string(),
-  recipientPhone: z.string(),
-  origin: z.string(),
-  destination: z.string(),
+  adminId: z.string(),
+  senderName: z.string().optional(),
+  senderAddress: z.string().optional(),
+  senderEmail: z.string().optional(),
+  senderPhone: z.string().optional(),
+  recipientName: z.string().optional(),
+  recipientAddress: z.string().optional(),
+  recipientEmail: z.string().optional(),
+  recipientPhone: z.string().optional(),
+  origin: z.string().optional(),
+  destination: z.string().optional(),
 });
 
 
@@ -148,15 +150,25 @@ export async function createPackageAction(prevState: any, formData: FormData) {
 
         const statusHistory = [{
             status: 'Pris en charge',
-            location: origin,
+            location: origin || 'Inconnu',
             timestamp: FieldValue.serverTimestamp(),
         }];
 
         const newPackageData = {
-            sender: { name: senderName, address: senderAddress, email: senderEmail || undefined, phone: senderPhone || undefined },
-            recipient: { name: recipientName, address: recipientAddress, email: recipientEmail || undefined, phone: recipientPhone || undefined },
-            origin,
-            destination,
+            sender: { 
+                name: senderName || 'Non spécifié', 
+                address: senderAddress || 'Non spécifiée',
+                ...(senderEmail && { email: senderEmail }),
+                ...(senderPhone && { phone: senderPhone }),
+            },
+            recipient: { 
+                name: recipientName || 'Non spécifié', 
+                address: recipientAddress || 'Non spécifiée',
+                ...(recipientEmail && { email: recipientEmail }),
+                ...(recipientPhone && { phone: recipientPhone }),
+            },
+            origin: origin || 'Non spécifié',
+            destination: destination || 'Non spécifié',
             adminId: adminId,
             currentStatus: 'Pris en charge' as PackageStatus,
             statusHistory: statusHistory,
@@ -270,13 +282,29 @@ export async function updatePackageAction(prevState: any, formData: FormData) {
   try {
     const pkgRef = firestore.collection('packages').doc(originalPackageId);
     
-    const updatedFields = {
-        sender: { name: senderName, address: senderAddress, email: senderEmail || undefined, phone: senderPhone || undefined },
-        recipient: { name: recipientName, address: recipientAddress, email: recipientEmail || undefined, phone: recipientPhone || undefined },
-        origin,
-        destination,
+     const updatedFields: Record<string, any> = {
+        'sender.name': senderName || 'Non spécifié',
+        'sender.address': senderAddress || 'Non spécifiée',
+        'recipient.name': recipientName || 'Non spécifié',
+        'recipient.address': recipientAddress || 'Non spécifiée',
+        origin: origin || 'Non spécifié',
+        destination: destination || 'Non spécifié',
         adminId,
     };
+
+    // Conditionally add email and phone fields to avoid saving undefined
+    if (senderEmail) updatedFields['sender.email'] = senderEmail;
+    else updatedFields['sender.email'] = FieldValue.delete();
+    
+    if (senderPhone) updatedFields['sender.phone'] = senderPhone;
+    else updatedFields['sender.phone'] = FieldValue.delete();
+    
+    if (recipientEmail) updatedFields['recipient.email'] = recipientEmail;
+    else updatedFields['recipient.email'] = FieldValue.delete();
+    
+    if (recipientPhone) updatedFields['recipient.phone'] = recipientPhone;
+    else updatedFields['recipient.phone'] = FieldValue.delete();
+
     await pkgRef.update(updatedFields);
     
     revalidatePath("/admin");
