@@ -23,15 +23,9 @@ service cloud.firestore {
       // Allow public read for package tracking page
       allow get: if true;
       
-      // Allow an admin to LIST packages, but ONLY if their query includes a filter for their own adminId.
-      // This is a critical security measure to prevent admins from listing all packages.
-      allow list: if isSignedIn() && isAdmin() && request.query.filters.map(f => f.field.string() == 'adminId' && f.op == '==' && f.value == request.auth.uid).hasAny([true]);
-      
-      // Allow an admin to create a package if the new package's adminId is their own UID.
-      allow create: if isSignedIn() && isAdmin() && request.resource.data.adminId == request.auth.uid;
-      
-      // Allow an admin to update or delete a package if the existing package's adminId is their own UID.
-      allow update, delete: if isSignedIn() && isAdmin() && resource.data.adminId == request.auth.uid;
+      // Allow any signed-in admin to list, create, update, or delete packages.
+      // This simplifies logic for the test application.
+      allow list, create, update, delete: if isSignedIn() && isAdmin();
     }
     
     // This collection is only for checking roles. Only admins can read/write to their own role document.
@@ -52,5 +46,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

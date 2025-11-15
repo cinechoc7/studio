@@ -79,8 +79,8 @@ export function usePackages() {
     
     const packagesQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        // Query packages where the adminId matches the current user's UID and order them
-        return query(collection(firestore, 'packages'), where("adminId", "==", user.uid));
+        // Query all packages, ordered by creation date
+        return query(collection(firestore, 'packages'), orderBy("createdAt", "desc"));
     }, [firestore, user]);
     
     const { data, isLoading: isPackagesLoading, error } = useCollection<Omit<Package, 'statusHistory' | 'id'> & { statusHistory: any[] }>(packagesQuery);
@@ -88,15 +88,9 @@ export function usePackages() {
     const packages = useMemo(() => {
         if (!data) return [];
         
-        const sortedData = [...data].sort((a, b) => {
-            const dateA = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : new Date(a.createdAt).getTime();
-            const dateB = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : new Date(b.createdAt).getTime();
-            return dateB - dateA;
-        });
+        const allPackages = data.map(pkg => convertTimestamps(pkg) as Package);
 
-        const allPackages = sortedData.map(pkg => convertTimestamps(pkg) as Package);
-
-        // If the database returns no packages for this admin, show the example packages.
+        // If the database returns no packages at all, show the example packages.
         if (allPackages.length === 0) {
             return examplePackages;
         }

@@ -24,13 +24,18 @@ function initializeFirebaseAdmin(): admin.app.App {
 
     const serviceAccount = JSON.parse(serviceAccountString);
 
-    if (admin.apps.length) {
+    if (admin.apps.length > 0) {
+        // Find an existing admin app, or return default
+        const existingApp = admin.apps.find(app => app?.name === '__admin__');
+        if (existingApp) {
+            return existingApp;
+        }
         return admin.app();
     }
 
     return admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
-    });
+    }, '__admin__');
 }
 
 
@@ -51,47 +56,52 @@ async function createAdminUser() {
   const adminFirestore = getAdminFirestore(adminApp);
   const adminAuth = getAdminAuth(adminApp);
 
+  let userCredential;
+
   try {
-    let userRecord;
-    try {
-        userRecord = await adminAuth.getUserByEmail(email);
-        console.log('User with this email already exists in Firebase Auth:', userRecord.uid);
-    } catch (error: any) {
-        if (error.code === 'auth/user-not-found') {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            userRecord = await adminAuth.getUser(userCredential.user.uid);
-            console.log('Successfully created new auth user:', userRecord.uid);
-        } else {
-            throw error;
-        }
+    // Attempt to create the user with the client SDK
+    userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    console.log('Successfully created new auth user:', userCredential.user.uid);
+  } catch (error: any) {
+    if (error.code === 'auth/email-already-in-use') {
+      console.log('User with this email already exists. Skipping creation, proceeding to grant roles...');
+    } else {
+      console.error('Error creating auth user:', error.message);
+      process.exit(1);
     }
-    const user = userRecord;
+  }
 
-    // Set a custom claim to identify the user as an admin
-    await adminAuth.setCustomUserClaims(user.uid, { admin: true });
-    console.log(`Successfully set custom claim 'admin:true' for ${user.uid}.`);
+  try {
+    // Get user by email to ensure we have the UID
+    const user = await adminAuth.getUserByEmail(email);
+    const uid = user.uid;
 
-    const adminInfoDocRef = adminFirestore.collection('admins').doc(user.uid);
+    // Set custom claim to identify user as an admin (useful for some security rules)
+    await adminAuth.setCustomUserClaims(uid, { admin: true });
+    console.log(`Successfully set custom claim 'admin:true' for ${uid}.`);
+
+    // Create a document in the 'admins' collection to store public admin info
+    const adminInfoDocRef = adminFirestore.collection('admins').doc(uid);
     await adminInfoDocRef.set({
       email: user.email,
-      createdAt: new Date(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
-    console.log(`Successfully created/updated admin info doc for ${user.uid}.`);
+    console.log(`Successfully created/updated admin info doc for ${uid}.`);
     
-    const adminRoleDocRef = adminFirestore.collection('roles_admin').doc(user.uid);
+    // Create a document in 'roles_admin' to grant the admin role via security rules
+    const adminRoleDocRef = adminFirestore.collection('roles_admin').doc(uid);
     await adminRoleDocRef.set({
         isAdmin: true,
-        grantedAt: new Date()
+        grantedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
-    console.log(`Successfully granted admin role to ${user.uid} in 'roles_admin' collection.`);
-
+    console.log(`Successfully granted admin role to ${uid} in 'roles_admin' collection.`);
 
     console.log('\nAdmin user processed successfully!');
     console.log('Email:', email);
-    console.log('Password:', password, '(if newly created)');
+    console.log('Password:', password);
 
   } catch (error: any) {
-      console.error('Error creating or updating admin user:', error.message);
+      console.error('Error granting admin roles or creating docs:', error.message);
   } finally {
     // Force exit to prevent hanging
     process.exit(0);

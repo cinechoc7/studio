@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { PackageStatus } from "./types";
-import { getFirestore, doc, getDoc, updateDoc, setDoc, deleteDoc, FieldValue } from "firebase/firestore";
+import { getFirestore, doc, getDoc, updateDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { initializeFirebase } from "@/firebase/server";
 
 
@@ -47,7 +47,6 @@ export async function updatePackageStatusAction(formData: FormData) {
         timestamp: new Date(),
     };
     
-    // Firestore's arrayUnion can be used here if we want to ensure no duplicate statuses are added, but for history, prepending is fine.
     const newHistory = [newStatusHistoryEntry, ...currentHistory];
 
     await updateDoc(docRef, {
@@ -213,7 +212,6 @@ export async function updatePackageAction(prevState: any, formData: FormData) {
         'recipient.phone': recipientPhone || '',
         origin: origin || 'Non spécifié',
         destination: destination || 'Non spécifié',
-        adminId,
     };
 
     await updateDoc(pkgRef, updatedFields);
