@@ -4,45 +4,30 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    function isAdmin() {
-      // Check for the existence of a document in the 'roles_admin' collection for the user's UID.
-      // This is more performant and the standard way to handle roles in security rules.
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-    }
-
+    // Rules for packages
     match /packages/{packageId} {
-      // Allow public read for package tracking page
-      allow get: if true;
-      
-      // Allow any signed-in admin to list, create, update, or delete packages.
-      // This simplifies logic for the test application.
-      allow list, create, update, delete: if isSignedIn() && isAdmin();
+      // Allow any signed-in user to do anything for demo purposes.
+      allow read, write: if isSignedIn();
     }
     
-    // This collection is only for checking roles. Only admins can read/write to their own role document.
-    match /roles_admin/{uid} {
-        allow read, write: if isSignedIn() && isOwner(uid);
+    // Rules for package statuses
+    match /package_statuses/{packageStatusId} {
+        // Allow any signed-in user to do anything for demo purposes.
+        allow read, write: if isSignedIn();
     }
     
+    // Admin info collection - only readable/writable by the admin themselves.
     match /admins/{adminId} {
-        // Only allow an admin to read or modify their own document in the 'admins' collection.
-        allow read, write: if isSignedIn() && isOwner(adminId);
+        allow read, write: if isSignedIn() && request.auth.uid == adminId;
     }
 
-    match /package_statuses/{packageStatusId} {
-      // Publicly readable for tracking purposes
-      allow read: if true;
-      // Only admins can create, update, or delete statuses
-      allow write: if isSignedIn() && isAdmin();
+    // Role management collection - only readable/writable by the admin themselves.
+    match /roles_admin/{uid} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
     }
   }
 }
