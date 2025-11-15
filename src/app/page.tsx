@@ -2,6 +2,7 @@
 
 
 
+
 import { TrackingForm } from '@/components/tracking-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -305,32 +306,9 @@ export default function Home() {
                 </div>
             </div>
         </section>
-
-        {/* Partners Section */}
-        <section id="partners" className="py-16 bg-secondary/20 md:py-24">
-            <div className="container px-4 mx-auto md:px-6">
-                <h2 className="mb-12 text-2xl font-bold text-center text-foreground md:text-3xl">Nos partenaires de confiance</h2>
-                <div className="relative overflow-hidden group">
-                    <div className="flex animate-scroll group-hover:pause">
-                       {partners.map((partner, index) => (
-                         <div key={index} className="flex-shrink-0 mx-6 w-36 flex justify-center items-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
-                           {partner.logo}
-                         </div>
-                       ))}
-                    </div>
-                     <div className="absolute top-0 flex animate-scroll2 group-hover:pause">
-                       {partners.map((partner, index) => (
-                         <div key={index} className="flex-shrink-0 mx-6 w-36 flex justify-center items-center grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
-                           {partner.logo}
-                         </div>
-                       ))}
-                    </div>
-                </div>
-            </div>
-        </section>
         
         {/* Testimonials Section */}
-        <section id="testimonials" className="py-16 bg-background md:py-24">
+        <section id="testimonials" className="py-16 bg-secondary/20 md:py-24">
             <div className="container px-4 mx-auto md:px-6">
                 <h2 className="mb-16 text-3xl font-bold text-center text-foreground md:text-4xl">
                     Ce que nos utilisateurs disent de nous
