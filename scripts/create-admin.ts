@@ -4,38 +4,12 @@
 // 2. Make sure your `.env.local` file has the `FIREBASE_SERVICE_ACCOUNT` variable set.
 // 3. Run `npx tsx scripts/create-admin.ts` from your project root.
 
-import { initializeApp as initializeAdminApp, getApps as getAdminApps, App, deleteApp } from 'firebase-admin/app';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
-import { credential } from 'firebase-admin';
-import { initializeApp, getApps } from 'firebase/app';
+import { initializeApp, getApps, deleteApp as deleteClientApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { firebaseConfig } from '../src/firebase/config';
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load environment variables from .env.local
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
-
-function initializeFirebaseAdmin(): App {
-    if (getAdminApps().length) {
-        return getAdminApps()[0];
-    }
-    
-    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!serviceAccountString) {
-        throw new Error('The FIREBASE_SERVICE_ACCOUNT environment variable is not set. Please add it to your .env.local file.');
-    }
-
-    try {
-        const serviceAccount = JSON.parse(serviceAccountString);
-        return initializeAdminApp({
-            credential: credential.cert(serviceAccount)
-        }, 'admin-script-app'); // Give a unique name to this app instance
-    } catch (e: any) {
-        throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT: ${e.message}`);
-    }
-}
+import { initializeFirebaseAdmin } from '../src/lib/firebase-admin';
 
 
 async function createAdminUser() {
@@ -98,10 +72,6 @@ async function createAdminUser() {
   } catch (error: any) {
       console.error('Error creating or updating admin user:', error.message);
   } finally {
-    // Clean up the admin app connection
-    if (adminApp) {
-        await deleteApp(adminApp);
-    }
     // This script can hang if Firebase connections are not closed.
     // Using process.exit() is a forceful way to ensure it terminates.
     process.exit(0);

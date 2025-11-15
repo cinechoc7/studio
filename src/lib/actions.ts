@@ -3,34 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { PackageStatus } from "./types";
-import { getApps, initializeApp, type App, getApp, deleteApp } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
-import { credential } from 'firebase-admin';
-
-// --- Firebase Admin SDK Helper ---
-function initializeFirebaseAdmin(): App {
-    // We need to check if there are any apps initialized.
-    // If there are, and we are in a development environment with hot-reloading,
-    // we might have lingering apps. We should use the existing one or clean up.
-    if (getApps().length) {
-        return getApp();
-    }
-    
-    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!serviceAccountString) {
-        throw new Error('The FIREBASE_SERVICE_ACCOUNT environment variable is not set. This is required for server-side actions.');
-    }
-
-    try {
-        const serviceAccount = JSON.parse(serviceAccountString);
-        return initializeApp({
-            credential: credential.cert(serviceAccount)
-        });
-    } catch (e: any) {
-        throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT. Make sure it's a valid JSON string. Error: ${e.message}`);
-    }
-}
-
+import { initializeFirebaseAdmin } from "./firebase-admin";
 
 const updateStatusSchema = z.object({
   packageId: z.string(),
