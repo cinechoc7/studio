@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { PackageStatus } from "./types";
 import { getFirestore, doc, getDoc, updateDoc, setDoc, deleteDoc } from "firebase/firestore";
-import { initializeFirebase } from "@/firebase/server";
+import { initializeFirebase } from "@/firebase";
 
 
 const updateStatusSchema = z.object({
@@ -67,7 +67,6 @@ export async function updatePackageStatusAction(formData: FormData) {
 
 
 const createPackageSchema = z.object({
-  adminId: z.string(),
   senderName: z.string().optional(),
   senderAddress: z.string().optional(),
   senderEmail: z.string().email().optional().or(z.literal('')),
