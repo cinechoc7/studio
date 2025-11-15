@@ -78,7 +78,7 @@ export default function AdminDashboard() {
                 </Card>
             </div>
 
-            <PackageTable packages={packages} />
+            <PackageTable />
         </div>
     );
 }

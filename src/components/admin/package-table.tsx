@@ -26,18 +26,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { deletePackageAction } from "@/lib/actions";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VariantProps } from "class-variance-authority";
 import { EditPackageDialog } from "./edit-package-dialog";
 import { Loader2 } from "lucide-react";
+import { usePackages } from "@/lib/data";
 
 type PackageTableProps = {
-  packages: Package[];
+  initialPackages: Package[];
 };
 
-
-function DeletePackageDialog({ packageId }: { packageId: string }) {
+function DeletePackageDialog({ packageId, onPackageDeleted }: { packageId: string, onPackageDeleted: (id: string) => void }) {
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
     const [isPending, setIsPending] = useState(false);
@@ -54,6 +54,7 @@ function DeletePackageDialog({ packageId }: { packageId: string }) {
         });
 
         if (result.success) {
+            onPackageDeleted(packageId);
             setOpen(false);
         }
     };
@@ -85,8 +86,14 @@ function DeletePackageDialog({ packageId }: { packageId: string }) {
 }
 
 
-export function PackageTable({ packages }: PackageTableProps) {
+export function PackageTable() {
   const router = useRouter();
+  const { packages: initialPackages, isLoading } = usePackages();
+  const [packages, setPackages] = useState(initialPackages);
+
+  useState(() => {
+    setPackages(initialPackages);
+  }, [initialPackages]);
   
   const getStatusVariant = (status: string): VariantProps<typeof badgeVariants>["variant"] => {
     switch (status) {
@@ -109,7 +116,15 @@ export function PackageTable({ packages }: PackageTableProps) {
   const handleViewDetails = (id: string) => {
     router.push(`/admin/package/${id}`);
   };
+
+  const handlePackageDeleted = (id: string) => {
+    setPackages(currentPackages => currentPackages.filter(p => p.id !== id));
+  };
   
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
+
   if (packages.length === 0) {
     return (
         <Card className="text-center p-12 border-dashed bg-secondary/30">
@@ -166,7 +181,7 @@ export function PackageTable({ packages }: PackageTableProps) {
                                             <EditPackageDialog pkg={pkg} asTrigger />
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DeletePackageDialog packageId={pkg.id} />
+                                        <DeletePackageDialog packageId={pkg.id} onPackageDeleted={handlePackageDeleted} />
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>

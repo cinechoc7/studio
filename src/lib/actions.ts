@@ -2,9 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import type { PackageStatus } from "./types";
-import { getFirestore, doc, getDoc, updateDoc, setDoc, deleteDoc } from "firebase/firestore";
-import { initializeFirebase } from "@/firebase/server";
+import type { Package, PackageStatus } from "./types";
+import { addPackage, deletePackage, updatePackage, updateStatus } from './data';
 
 
 const updateStatusSchema = z.object({
@@ -14,8 +13,6 @@ const updateStatusSchema = z.object({
 });
 
 export async function updatePackageStatusAction(formData: FormData) {
-  const { firestore } = initializeFirebase();
-  
   try {
     const validatedFields = updateStatusSchema.safeParse({
       packageId: formData.get('packageId'),
@@ -31,36 +28,14 @@ export async function updatePackageStatusAction(formData: FormData) {
     }
     
     const { packageId, status, location } = validatedFields.data;
-    const docRef = doc(firestore, 'packages', packageId);
-
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
-        throw new Error("Package not found.");
-    }
+    await updateStatus(packageId, status, location);
     
-    const currentData = docSnap.data();
-    const currentHistory = currentData.statusHistory || [];
-
-    const newStatusHistoryEntry = {
-        status: status,
-        location: location,
-        timestamp: new Date(),
-    };
-    
-    const newHistory = [newStatusHistoryEntry, ...currentHistory];
-
-    await updateDoc(docRef, {
-        currentStatus: status,
-        statusHistory: newHistory
-    });
-
     revalidatePath("/admin");
     revalidatePath(`/admin/package/${packageId}`);
     revalidatePath(`/tracking/${packageId}`);
 
     return { message: `Statut du colis mis à jour en "${status}".`, success: true };
   } catch (error: any) {
-    console.error("Error in updatePackageStatusAction:", error);
     return { message: error.message || "Une erreur inattendue est survenue.", success: false };
   }
 }
@@ -82,8 +57,6 @@ const createPackageSchema = z.object({
 
 
 export async function createPackageAction(formData: FormData) {
-    const { firestore } = initializeFirebase();
-
     const validatedFields = createPackageSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validatedFields.success) {
@@ -97,17 +70,16 @@ export async function createPackageAction(formData: FormData) {
     try {
         const data = validatedFields.data;
         const packageId = `CM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}FR`;
-        
         const now = new Date();
 
-        const newPackageData = {
+        const newPackageData: Package = {
             id: packageId,
-            adminId: "demo-user", // No more adminId logic
-            currentStatus: 'Pris en charge' as PackageStatus,
+            adminId: "demo-user",
+            currentStatus: 'Pris en charge',
             createdAt: now,
             statusHistory: [
               {
-                status: 'Pris en charge' as PackageStatus,
+                status: 'Pris en charge',
                 location: data.origin || 'Inconnu',
                 timestamp: now,
               }
@@ -128,14 +100,10 @@ export async function createPackageAction(formData: FormData) {
             destination: data.destination || 'Non spécifié',
         };
 
-        await setDoc(doc(firestore, 'packages', packageId), newPackageData);
-        
+        await addPackage(newPackageData);
         revalidatePath("/admin");
-
         return { message: `Colis ${packageId} créé avec succès.`, success: true };
-
     } catch (e: any) {
-        console.error("Server Action Error:", e);
         return {
             message: e.message || 'une erreur est survenue lors de la creation du colis',
             success: false,
@@ -145,14 +113,12 @@ export async function createPackageAction(formData: FormData) {
 
 
 export async function deletePackageAction(packageId: string) {
-    const { firestore } = initializeFirebase();
-    
     if (!packageId) {
         return { message: 'Requête invalide, ID du colis manquant.', success: false };
     }
 
     try {
-        await deleteDoc(doc(firestore, "packages", packageId));
+        await deletePackage(packageId);
         revalidatePath('/admin');
         return { message: 'Colis supprimé avec succès.', success: true };
     } catch (error: any) {
@@ -177,8 +143,6 @@ const updatePackageSchema = z.object({
 
 
 export async function updatePackageAction(prevState: any, formData: FormData) {
-  const { firestore } = initializeFirebase();
-  
   const validatedFields = updatePackageSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
@@ -191,35 +155,34 @@ export async function updatePackageAction(prevState: any, formData: FormData) {
 
   const {
     originalPackageId,
-    senderName, senderAddress, senderEmail, senderPhone,
-    recipientName, recipientAddress, recipientEmail, recipientPhone,
-    origin, destination
+    ...data
   } = validatedFields.data;
 
   try {
-    const pkgRef = doc(firestore, 'packages', originalPackageId);
-    
-     const updatedFields: Record<string, any> = {
-        'sender.name': senderName || 'Non spécifié',
-        'sender.address': senderAddress || 'Non spécifiée',
-        'sender.email': senderEmail || '',
-        'sender.phone': senderPhone || '',
-        'recipient.name': recipientName || 'Non spécifié',
-        'recipient.address': recipientAddress || 'Non spécifiée',
-        'recipient.email': recipientEmail || '',
-        'recipient.phone': recipientPhone || '',
-        origin: origin || 'Non spécifié',
-        destination: destination || 'Non spécifié',
+    const updatedFields: Partial<Package> = {
+        sender: {
+            name: data.senderName || 'Non spécifié',
+            address: data.senderAddress || 'Non spécifiée',
+            email: data.senderEmail || '',
+            phone: data.senderPhone || ''
+        },
+        recipient: {
+            name: data.recipientName || 'Non spécifié',
+            address: data.recipientAddress || 'Non spécifiée',
+            email: data.recipientEmail || '',
+            phone: data.recipientPhone || ''
+        },
+        origin: data.origin || 'Non spécifié',
+        destination: data.destination || 'Non spécifié',
     };
 
-    await updateDoc(pkgRef, updatedFields);
+    await updatePackage(originalPackageId, updatedFields);
     
     revalidatePath("/admin");
     revalidatePath(`/admin/package/${originalPackageId}`);
 
     return { message: `Colis ${originalPackageId} mis à jour avec succès.`, success: true, errors: null };
   } catch (error: any) {
-    console.error("Error in updatePackageAction:", error);
     return { message: error.message || 'Une erreur est survenue lors de la mise à jour.', success: false, errors: null };
   }
 }

@@ -1,41 +1,15 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import type { Package, PackageStatus, ContactInfo } from './types';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import {
-  collection,
-  doc,
-  getDoc,
-  query,
-  orderBy,
-  Timestamp,
-  type Firestore,
-} from 'firebase/firestore';
+import type { Package } from './types';
+import { revalidatePath } from 'next/cache';
 
-
-function convertTimestamps(data: any): any {
-  if (data instanceof Timestamp) {
-    return data.toDate();
-  }
-  if (Array.isArray(data)) {
-    return data.map(convertTimestamps);
-  }
-  if (data !== null && typeof data === 'object') {
-    return Object.keys(data).reduce((acc, key) => {
-      acc[key] = convertTimestamps(data[key]);
-      return acc;
-    }, {} as any);
-  }
-  return data;
-}
-
-const examplePackages: Package[] = [
+let memoryPackages: Package[] = [
     {
         id: 'CM123456789FR',
         adminId: 'demo-user',
-        sender: { name: 'Boutique de Gadgets', address: '123 Rue de l\'Innovation, 75002 Paris' },
-        recipient: { name: 'Jean Dupont', address: '45 Avenue des Champs-Élysées, 75008 Paris' },
+        sender: { name: 'Boutique de Gadgets', address: '123 Rue de l\'Innovation, 75002 Paris', email: 'contact@gadget.com', phone: '0123456789' },
+        recipient: { name: 'Jean Dupont', address: '45 Avenue des Champs-Élysées, 75008 Paris', email: 'jean.dupont@email.com', phone: '0612345678' },
         origin: 'Paris, France',
         destination: 'Paris, France',
         currentStatus: 'Livré',
@@ -51,8 +25,8 @@ const examplePackages: Package[] = [
     {
         id: 'CM987654321FR',
         adminId: 'demo-user',
-        sender: { name: 'Librairie Le Savoir', address: '15 Rue de la Paix, 75001 Paris' },
-        recipient: { name: 'Marie Curie', address: '22 Rue de la Liberté, 13001 Marseille' },
+        sender: { name: 'Librairie Le Savoir', address: '15 Rue de la Paix, 75001 Paris', email: 'librairie@savoir.fr', phone: '0198765432' },
+        recipient: { name: 'Marie Curie', address: '22 Rue de la Liberté, 13001 Marseille', email: 'marie.curie@email.fr', phone: '0687654321' },
         origin: 'Paris, France',
         destination: 'Marseille, France',
         currentStatus: 'En cours d\'acheminement',
@@ -65,61 +39,93 @@ const examplePackages: Package[] = [
     }
 ];
 
+// This is a simple event emitter to notify components of data changes.
+const createNanoEvents = () => ({
+  events: {} as Record<string, Function[]>,
+  emit(event: string) {
+    (this.events[event] || []).forEach(cb => cb());
+  },
+  on(event: string, cb: Function) {
+    (this.events[event] = this.events[event] || []).push(cb);
+    return () => (this.events[event] = (this.events[event] || []).filter(i => i !== cb));
+  }
+});
+const emitter = createNanoEvents();
 
-// Hook to get packages and subscribe to updates
+export const dataChanged = () => emitter.emit('changed');
+
+
 export function usePackages() {
-    const firestore = useFirestore();
-    
-    const packagesQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        // Query all packages, ordered by creation date
-        return query(collection(firestore, 'packages'), orderBy("createdAt", "desc"));
-    }, [firestore]);
-    
-    const { data, isLoading, error } = useCollection<Omit<Package, 'statusHistory' | 'id'> & { statusHistory: any[] }>(packagesQuery);
+    const [packages, setPackages] = useState(memoryPackages);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const packages = useMemo(() => {
-        if (!data) return [];
-        
-        const allPackages = data.map(pkg => convertTimestamps(pkg) as Package);
-
-        // If the database returns no packages at all, show the example packages.
-        if (allPackages.length === 0) {
-            return examplePackages;
-        }
-
-        return allPackages;
-    }, [data]);
-    
     useEffect(() => {
-        if(error) {
-            console.error("Error fetching packages:", error);
-        }
-    }, [error]);
+        // Simulate initial data fetch
+        const sortedPackages = [...memoryPackages].sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime());
+        setPackages(sortedPackages);
+        setIsLoading(false);
+
+        // Listen for changes
+        const unsubscribe = emitter.on('changed', () => {
+            const sorted = [...memoryPackages].sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime());
+            setPackages(sorted);
+        });
+
+        return unsubscribe;
+    }, []);
 
     return { packages, isLoading };
 }
 
 
-export async function getPackageById(firestore: Firestore, id: string): Promise<Package | undefined> {
-    // First, check if it's an example package
-    const examplePkg = examplePackages.find(p => p.id === id);
-    if (examplePkg) {
-        return examplePkg;
-    }
+export async function getPackages(): Promise<Package[]> {
+    return Promise.resolve(memoryPackages.sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime()));
+}
 
-    const docRef = doc(firestore, "packages", id);
-    try {
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            const convertedData = convertTimestamps(data);
-            return { id: docSnap.id, ...convertedData } as Package;
-        } else {
-            return undefined;
-        }
-    } catch (error) {
-        console.error("Error getting package by ID:", error);
-        return undefined;
+export async function getPackageById(id: string): Promise<Package | undefined> {
+    const pkg = memoryPackages.find(p => p.id === id);
+    return Promise.resolve(pkg);
+}
+
+export async function addPackage(pkg: Package) {
+    memoryPackages.push(pkg);
+    dataChanged();
+    return Promise.resolve(pkg);
+}
+
+export async function deletePackage(id: string) {
+    const index = memoryPackages.findIndex(p => p.id === id);
+    if (index > -1) {
+        memoryPackages.splice(index, 1);
+        dataChanged();
+        return Promise.resolve(true);
     }
+    return Promise.resolve(false);
+}
+
+export async function updatePackage(id: string, updatedData: Partial<Package>) {
+    const index = memoryPackages.findIndex(p => p.id === id);
+    if (index > -1) {
+        memoryPackages[index] = { ...memoryPackages[index], ...updatedData };
+        dataChanged();
+        return Promise.resolve(memoryPackages[index]);
+    }
+    return Promise.resolve(null);
+}
+
+export async function updateStatus(id: string, status: string, location: string) {
+     const index = memoryPackages.findIndex(p => p.id === id);
+     if (index > -1) {
+        const pkg = memoryPackages[index];
+        const newStatusEntry = {
+            status,
+            location,
+            timestamp: new Date()
+        };
+        pkg.currentStatus = newStatusEntry.status as any;
+        pkg.statusHistory.unshift(newStatusEntry as any);
+        dataChanged();
+        return Promise.resolve(pkg);
+     }
+     return Promise.resolve(null);
 }

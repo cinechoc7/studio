@@ -1,6 +1,5 @@
 'use client';
 
-import { useFirestore, useMemoFirebase } from "@/firebase";
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -21,19 +20,14 @@ type TrackingPageProps = {
 export default function TrackingPage({ params }: TrackingPageProps) {
   const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
   const packageId = params.id.toUpperCase();
-  const firestore = useFirestore();
 
   useEffect(() => {
-    // Since we are not using real-time updates on the public tracking page
-    // we can use a one-time fetch function.
     const fetchPackage = async () => {
-        if (firestore) {
-            const foundPackage = await getPackageById(firestore, packageId);
-            setPkg(foundPackage || null);
-        }
+        const foundPackage = await getPackageById(packageId);
+        setPkg(foundPackage || null);
     };
     fetchPackage();
-  }, [packageId, firestore]);
+  }, [packageId]);
 
 
   if (pkg === undefined) {
