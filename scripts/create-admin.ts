@@ -100,8 +100,7 @@ async function createAdminUser() {
     console.log('Email:', email);
     console.log('Password:', password);
 
-  } catch (error: any) {
-      console.error('Error granting admin roles or creating docs:', error.message);
+  } catch (error: any)      console.error('Error granting admin roles or creating docs:', error.message);
   } finally {
     // Force exit to prevent hanging
     process.exit(0);
