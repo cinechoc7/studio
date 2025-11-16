@@ -1,4 +1,4 @@
-'use client';
+'use server';
 import {
   Card,
   CardContent,
@@ -12,39 +12,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { UpdateStatusForm } from "@/components/admin/update-status-form";
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
-import { useEffect, useState, use } from "react";
-import type { Package } from "@/lib/types";
 import { getPackageById } from "@/lib/data";
 import { EditPackageDialog } from "@/components/admin/edit-package-dialog";
+import type { Package } from "@/lib/types";
 
 type AdminPackagePageProps = {
   params: { id: string };
 };
 
 
-export default function AdminPackagePage({ params }: AdminPackagePageProps) {
-  const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
+export default async function AdminPackagePage({ params }: AdminPackagePageProps) {
   const packageId = params.id;
-  
-  useEffect(() => {
-    if (!packageId) return;
-
-    const fetchPackage = async () => {
-        const foundPackage = await getPackageById(packageId);
-        setPkg(foundPackage || null);
-    };
-    fetchPackage();
-    
-  }, [packageId]);
-
-
-  if (pkg === undefined) {
-    return (
-        <main className="flex flex-1 flex-col items-center justify-center p-4 lg:p-6">
-             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </main>
-    )
-  }
+  const pkg: Package | undefined = await getPackageById(packageId);
 
   if (!pkg) {
     return (
