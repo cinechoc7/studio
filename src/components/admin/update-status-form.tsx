@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useFirestore } from "@/firebase";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 
 type UpdateStatusFormProps = {
   packageId: string;
@@ -22,10 +22,14 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isPending, setIsPending] = useState(false);
+  const formRef = React.useRef<HTMLFormElement>(null);
   
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!firestore) return;
+    if (!firestore) {
+        toast({ title: "Erreur", description: "La base de données n'est pas disponible.", variant: "destructive"});
+        return;
+    }
 
     setIsPending(true);
     const formData = new FormData(event.currentTarget);
@@ -38,28 +42,18 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
         return;
     }
 
+    const newStatusEntry: StatusHistory = {
+        status,
+        location,
+        timestamp: new Date().toISOString(),
+    };
+
     try {
         const packageRef = doc(firestore, "packages", packageId);
-        const packageSnap = await getDoc(packageRef);
-
-        if (!packageSnap.exists()) {
-            throw new Error("Colis non trouvé.");
-        }
-
-        const currentData = packageSnap.data();
-        const currentHistory = currentData.statusHistory || [];
-
-        const newStatusEntry: StatusHistory = {
-            status,
-            location,
-            timestamp: new Date().toISOString(),
-        };
-
-        const updatedHistory = [newStatusEntry, ...currentHistory];
-
+        
         await updateDoc(packageRef, {
             currentStatus: status,
-            statusHistory: updatedHistory,
+            statusHistory: arrayUnion(newStatusEntry)
         });
         
         // Revalidate public pages
@@ -70,9 +64,13 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
             description: `Statut du colis mis à jour en "${status}".`,
         });
 
+        // Reset form fields after successful submission
+        formRef.current?.reset();
+
     } catch (error: any) {
+        console.error("Error updating package status:", error);
         toast({
-            title: "Erreur",
+            title: "Erreur de mise à jour",
             description: error.message || "La mise à jour du statut a échoué.",
             variant: "destructive",
         });
@@ -86,12 +84,12 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
   const availableStatuses = packageStatuses.filter(status => status !== currentStatus);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="packageId" value={packageId} />
       
       <div className="space-y-2">
         <Label htmlFor="status">Nouveau statut</Label>
-        <Select name="status" defaultValue={availableStatuses[0]}>
+        <Select name="status" defaultValue={availableStatuses.length > 0 ? availableStatuses[0] : undefined}>
           <SelectTrigger id="status">
             <SelectValue placeholder="Sélectionner un statut" />
           </SelectTrigger>
