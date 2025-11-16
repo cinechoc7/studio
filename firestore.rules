@@ -2,17 +2,17 @@
  * @fileoverview Firestore Security Rules for Package Tracking Application
  *
  * Core Philosophy:
- * This ruleset prioritizes a secure admin experience. All data access is restricted
- * to authenticated users. Public tracking is handled by a read-only JSON cache,
- * not by direct Firestore access from unauthenticated clients.
+ * This ruleset prioritizes a secure admin experience while allowing public tracking.
  *
  * Data Structure:
- * - /packages/{packageId}: Stores package information. Each document is a parcel.
+ * - /packages/{packageId}: Stores package information.
  *
  * Key Security Decisions:
- * - Admin-Only Access: All read and write operations on the entire database are
- *   restricted to authenticated admin users. This simplifies security and ensures
- *   that only trusted users can modify or view data directly from the database.
+ * - Admin-Only Writes: All write operations (create, update, delete) and listing the
+ *   entire collection are restricted to authenticated admin users.
+ * - Public Read for Single Documents: Unauthenticated users can read (get) a single
+ *   package document if they have the direct link/ID, enabling the public tracking page.
+ *   They cannot list all packages.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -20,10 +20,17 @@ service cloud.firestore {
 
     /**
      * @description Rules for the 'packages' collection.
-     * Restricts all access to authenticated users only.
+     * - Allows public read for single documents ('get').
+     * - Restricts list, create, update, and delete to authenticated users.
      */
     match /packages/{packageId} {
-      allow read, write: if isSignedIn();
+      // Any user (even unauthenticated) can fetch a single package document.
+      // This is necessary for the public tracking page.
+      allow get: if true;
+
+      // Only authenticated users (admins) can list all packages, create, update, or delete them.
+      // This secures the admin dashboard and data management operations.
+      allow list, write: if isSignedIn();
     }
 
     /**
