@@ -64,7 +64,7 @@ const createPackageSchema = z.object({
   senderName: z.string().optional(),
   senderAddress: z.string().optional(),
   senderEmail: z.string().email().optional().or(z.literal('')),
-  senderPhone: z'string().optional(),
+  senderPhone: z.string().optional(),
   recipientName: z.string().optional(),
   recipientAddress: z.string().optional(),
   recipientEmail: z.string().email().optional().or(z.literal('')),
