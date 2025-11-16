@@ -1,13 +1,12 @@
-'use client';
+'use server';
 
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Package as PackageIcon, MapPin, Calendar, CheckCircle, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Package as PackageIcon, MapPin, Calendar, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useEffect, useState } from "react";
 import type { Package } from "@/lib/types";
 import { getPackageById } from "@/lib/data";
 
@@ -17,27 +16,9 @@ type TrackingPageProps = {
 };
 
 
-export default function TrackingPage({ params }: TrackingPageProps) {
-  const [pkg, setPkg] = useState<Package | null | undefined>(undefined);
+export default async function TrackingPage({ params }: TrackingPageProps) {
   const packageId = params.id.toUpperCase();
-
-  useEffect(() => {
-    const fetchPackage = async () => {
-        const foundPackage = await getPackageById(packageId);
-        setPkg(foundPackage || null);
-    };
-    fetchPackage();
-  }, [packageId]);
-
-
-  if (pkg === undefined) {
-    return (
-        <main className="flex min-h-screen w-full flex-col items-center justify-center p-4 bg-background">
-             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        </main>
-    )
-  }
-
+  const pkg: Package | undefined = await getPackageById(packageId);
 
   if (!pkg) {
     return (

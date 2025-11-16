@@ -64,7 +64,7 @@ const createPackageSchema = z.object({
   senderName: z.string().optional(),
   senderAddress: z.string().optional(),
   senderEmail: z.string().email().optional().or(z.literal('')),
-  senderPhone: z.string().optional(),
+  senderPhone: z'string().optional(),
   recipientName: z.string().optional(),
   recipientAddress: z.string().optional(),
   recipientEmail: z.string().email().optional().or(z.literal('')),
@@ -120,7 +120,6 @@ export async function createPackageAction(formData: FormData) {
 
         await addPackage(newPackageData);
         revalidatePath("/admin");
-        // Revalidate detail pages to ensure they can be accessed immediately
         revalidatePath(`/admin/package/${packageId}`);
         revalidatePath(`/tracking/${packageId}`);
 
@@ -142,7 +141,6 @@ export async function deletePackageAction(packageId: string) {
     try {
         await deletePackage(packageId);
         revalidatePath('/admin');
-        // It's a good practice to revalidate tracking pages too in case links are shared
         revalidatePath(`/tracking/${packageId}`);
         revalidatePath(`/admin/package/${packageId}`);
 
