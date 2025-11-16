@@ -31,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { VariantProps } from "class-variance-authority";
 import { EditPackageDialog } from "./edit-package-dialog";
 import { Loader2 } from "lucide-react";
-import { usePackages } from "@/lib/data";
+import { usePackages } from "@/lib/hooks/use-packages";
 
 
 function DeletePackageDialog({ packageId, onPackageDeleted }: { packageId: string, onPackageDeleted: (id: string) => void }) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { PackageTable } from "@/components/admin/package-table";
-import { usePackages } from "@/lib/data";
+import { usePackages } from "@/lib/hooks/use-packages";
 import { AddPackageDialog } from "@/components/admin/add-package-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Package, Truck, CheckCircle, PlusCircle } from "lucide-react";
