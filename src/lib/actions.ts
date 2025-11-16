@@ -12,6 +12,7 @@ import {
     getAllPackages as getAllPackagesFromDb,
     getPackageById as getPackageByIdFromDb
 } from "./data";
+import { serverTimestamp } from "firebase/firestore";
 
 // --- Server Actions ---
 
@@ -89,7 +90,7 @@ export async function createPackageAction(formData: FormData) {
         const data = validatedFields.data;
         const packageId = `CM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}FR`;
 
-        const newPackageData: Omit<Package, 'createdAt' | 'createdAt'> = {
+        const newPackageData: Omit<Package, 'createdAt' | 'id'> = {
             id: packageId,
             adminId: "demo-user", // In a real app, this would come from the authenticated user
             currentStatus: 'Pris en charge',
@@ -116,7 +117,11 @@ export async function createPackageAction(formData: FormData) {
             destination: data.destination || 'Non spécifié',
         };
 
-        await addPackage(newPackageData);
+        await addPackage({
+            ...newPackageData,
+            createdAt: serverTimestamp()
+        });
+
         revalidatePath("/admin");
         revalidatePath(`/admin/package/${packageId}`);
         revalidatePath(`/tracking/${packageId}`);
