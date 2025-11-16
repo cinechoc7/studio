@@ -1,14 +1,16 @@
 "use client";
 
-import { updatePackageStatusAction } from "@/lib/actions";
+import { revalidatePackagePaths } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { PackageStatus, packageStatuses } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { PackageStatus, packageStatuses, StatusHistory } from "@/lib/types";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useFirestore } from "@/firebase";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 
 type UpdateStatusFormProps = {
   packageId: string;
@@ -18,20 +20,65 @@ type UpdateStatusFormProps = {
 
 export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormProps) {
   const { toast } = useToast();
+  const firestore = useFirestore();
   const [isPending, setIsPending] = useState(false);
   
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!firestore) return;
+
     setIsPending(true);
     const formData = new FormData(event.currentTarget);
-    const result = await updatePackageStatusAction(formData);
-    setIsPending(false);
+    const status = formData.get('status') as PackageStatus;
+    const location = formData.get('location') as string;
 
-    toast({
-        title: result.success ? "Succès" : "Erreur",
-        description: result.message,
-        variant: result.success ? "default" : "destructive",
-    });
+    if (!status || !location) {
+        toast({ title: "Erreur", description: "Le statut et l'emplacement sont requis.", variant: "destructive"});
+        setIsPending(false);
+        return;
+    }
+
+    try {
+        const packageRef = doc(firestore, "packages", packageId);
+        const packageSnap = await getDoc(packageRef);
+
+        if (!packageSnap.exists()) {
+            throw new Error("Colis non trouvé.");
+        }
+
+        const currentData = packageSnap.data();
+        const currentHistory = currentData.statusHistory || [];
+
+        const newStatusEntry: StatusHistory = {
+            status,
+            location,
+            timestamp: new Date().toISOString(),
+        };
+
+        const updatedHistory = [newStatusEntry, ...currentHistory];
+
+        await updateDoc(packageRef, {
+            currentStatus: status,
+            statusHistory: updatedHistory,
+        });
+        
+        // Revalidate public pages
+        await revalidatePackagePaths(packageId);
+
+        toast({
+            title: "Succès",
+            description: `Statut du colis mis à jour en "${status}".`,
+        });
+
+    } catch (error: any) {
+        toast({
+            title: "Erreur",
+            description: error.message || "La mise à jour du statut a échoué.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsPending(false);
+    }
   }
 
 
@@ -68,7 +115,7 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
         />
       </div>
       
-       <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/90">
+       <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/hover">
             {isPending ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
             Mettre à jour
         </Button>

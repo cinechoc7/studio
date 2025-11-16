@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,29 +14,14 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { updatePackageAction } from '@/lib/actions';
-import { Loader2, Barcode, Pencil } from 'lucide-react';
+import { revalidatePackagePaths } from '@/lib/actions';
+import { Loader2, Barcode, Pencil, Building, MapPin, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import type { Package } from '@/lib/types';
-import { Building, MapPin, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const initialState = {
-  message: '',
-  errors: null,
-  success: false,
-};
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending} className="w-full sm:w-auto bg-primary hover:bg-primary/90">
-      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
-      Enregistrer les modifications
-    </Button>
-  );
-}
+import { useFirestore } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 interface EditPackageDialogProps {
     pkg: Package;
@@ -46,27 +29,59 @@ interface EditPackageDialogProps {
 }
 
 export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogProps) {
-  const [state, formAction] = useActionState(updatePackageAction, initialState);
   const { toast } = useToast();
+  const firestore = useFirestore();
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (state.message) {
-      toast({
-        title: state.success ? 'Succès !' : 'Erreur',
-        description: state.message,
-        variant: state.success ? 'default' : 'destructive',
-      });
-      if (state.success) {
-        closeButtonRef.current?.click();
-        setOpen(false);
-      }
-    }
-  }, [state, toast]);
+  const [isPending, setIsPending] = useState(false);
   
   const isExamplePackage = pkg.id.startsWith('CM') && pkg.adminId === 'dummy-admin-id';
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!firestore) return;
+
+    setIsPending(true);
+    const formData = new FormData(event.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+
+    const updatedFields = {
+        'sender.name': data.senderName,
+        'sender.address': data.senderAddress,
+        'sender.email': data.senderEmail,
+        'sender.phone': data.senderPhone,
+        'recipient.name': data.recipientName,
+        'recipient.address': data.recipientAddress,
+        'recipient.email': data.recipientEmail,
+        'recipient.phone': data.recipientPhone,
+        'origin': data.origin,
+        'destination': data.destination,
+    };
+    
+    try {
+        const packageRef = doc(firestore, "packages", pkg.id);
+        await updateDoc(packageRef, updatedFields);
+        await revalidatePackagePaths(pkg.id);
+
+        toast({
+            title: 'Succès !',
+            description: `Colis ${pkg.id} mis à jour avec succès.`
+        });
+
+        setIsPending(false);
+        setOpen(false);
+
+    } catch (error: any) {
+        console.error("Error updating package:", error);
+        toast({
+            title: 'Erreur de mise à jour',
+            description: error.message || 'Une erreur est survenue.',
+            variant: 'destructive'
+        });
+        setIsPending(false);
+    }
+  };
 
   const dialogContent = (
     <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -82,9 +97,7 @@ export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogP
                 <p className="text-sm">Veuillez créer un nouveau colis pour tester la fonctionnalité d'édition.</p>
             </div>
         ) : (
-        <form ref={formRef} action={formAction} className="space-y-6 pt-4">
-          <input type="hidden" name="originalPackageId" value={pkg.id} />
-          
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 pt-4">
            <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
                 <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Barcode className="text-primary"/>Code de suivi</h3>
                  <div className="space-y-2">
@@ -158,7 +171,10 @@ export function EditPackageDialog({ pkg, asTrigger = false }: EditPackageDialogP
             <DialogClose asChild>
                 <Button type="button" variant="outline" ref={closeButtonRef}>Annuler</Button>
             </DialogClose>
-            <SubmitButton />
+            <Button type="submit" disabled={isPending} className="w-full sm:w-auto bg-primary hover:bg-primary/90">
+                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Pencil className="mr-2 h-4 w-4" />}
+                Enregistrer les modifications
+            </Button>
           </DialogFooter>
         </form>
         )}

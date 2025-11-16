@@ -14,14 +14,19 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createPackageAction } from '@/lib/actions';
-import { Loader2, PlusCircle, PackagePlus } from 'lucide-react';
+import { revalidatePackagePaths } from '@/lib/actions';
+import { Loader2, PlusCircle, PackagePlus, Building, User, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
-import { Building, User, MapPin } from 'lucide-react';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import type { Package } from '@/lib/types';
+
 
 export function AddPackageDialog() {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
   const formRef = useRef<HTMLFormElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
@@ -29,23 +34,71 @@ export function AddPackageDialog() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!firestore || !user) {
+        toast({ title: 'Erreur', description: 'Utilisateur non authentifié ou base de données non disponible.', variant: 'destructive' });
+        return;
+    }
+
     setIsPending(true);
-
     const formData = new FormData(event.currentTarget);
-    const result = await createPackageAction(formData);
+    const data = Object.fromEntries(formData.entries());
 
-    setIsPending(false);
+    const packageId = `CM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}FR`;
 
-    toast({
-      title: result.success ? 'Succès !' : 'Erreur',
-      description: result.message,
-      variant: result.success ? 'default' : 'destructive',
-    });
+    const newPackageData: Package = {
+        id: packageId,
+        adminId: user.uid,
+        currentStatus: 'Pris en charge',
+        statusHistory: [
+          {
+            status: 'Pris en charge',
+            location: data.origin as string || 'Inconnu',
+            timestamp: new Date().toISOString(),
+          }
+        ],
+        sender: {
+            name: data.senderName as string || 'Non spécifié',
+            address: data.senderAddress as string || 'Non spécifiée',
+            email: data.senderEmail as string || '',
+            phone: data.senderPhone as string || ''
+        },
+        recipient: {
+            name: data.recipientName as string || 'Non spécifié',
+            address: data.recipientAddress as string || 'Non spécifiée',
+            email: data.recipientEmail as string || '',
+            phone: data.recipientPhone as string || ''
+        },
+        origin: data.origin as string || 'Non spécifié',
+        destination: data.destination as string || 'Non spécifié',
+        createdAt: new Date().toISOString(), // Placeholder, will be replaced by serverTimestamp
+    };
 
-    if (result.success) {
-      closeButtonRef.current?.click();
-      formRef.current?.reset();
-      setOpen(false);
+    try {
+        const packageRef = doc(firestore, "packages", packageId);
+        // Add serverTimestamp for accurate creation time
+        await setDoc(packageRef, { ...newPackageData, createdAt: serverTimestamp() });
+        
+        // Revalidate paths to update server-side rendered pages and cache
+        await revalidatePackagePaths(packageId);
+
+        toast({
+            title: 'Succès !',
+            description: `Colis ${packageId} créé avec succès.`,
+        });
+
+        setIsPending(false);
+        closeButtonRef.current?.click();
+        formRef.current?.reset();
+        setOpen(false);
+
+    } catch (error: any) {
+        console.error("Error creating package:", error);
+        toast({
+            title: 'Erreur de création',
+            description: error.message || 'Une erreur est survenue lors de la création du colis.',
+            variant: 'destructive',
+        });
+        setIsPending(false);
     }
   };
 
@@ -65,20 +118,17 @@ export function AddPackageDialog() {
           </DialogDescription>
         </DialogHeader>
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6 pt-4">
-          
-          <input type="hidden" name="adminId" value="demo-user" />
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Sender Section */}
             <div className="p-4 space-y-4 border rounded-lg bg-secondary/30">
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><Building className="text-primary"/>Informations de l'Expéditeur</h3>
               <div className="space-y-2">
                 <Label htmlFor="senderName">Nom Complet</Label>
-                <Input id="senderName" name="senderName" placeholder="Ex: John Doe" />
+                <Input id="senderName" name="senderName" placeholder="Ex: John Doe" required/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senderAddress">Adresse Complète</Label>
-                <Input id="senderAddress" name="senderAddress" placeholder="Ex: 123 Rue Principale, 75001 Paris" />
+                <Input id="senderAddress" name="senderAddress" placeholder="Ex: 123 Rue Principale, 75001 Paris" required/>
               </div>
                <div className="space-y-2">
                 <Label htmlFor="senderEmail">Email</Label>
@@ -95,11 +145,11 @@ export function AddPackageDialog() {
               <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground"><User className="text-primary"/>Informations du Destinataire</h3>
               <div className="space-y-2">
                 <Label htmlFor="recipientName">Nom Complet</Label>
-                <Input id="recipientName" name="recipientName" placeholder="Ex: Jane Smith" />
+                <Input id="recipientName" name="recipientName" placeholder="Ex: Jane Smith" required/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="recipientAddress">Adresse Complète</Label>
-                <Input id="recipientAddress" name="recipientAddress" placeholder="Ex: 456 Avenue Secondaire, 13000 Marseille" />
+                <Input id="recipientAddress" name="recipientAddress" placeholder="Ex: 456 Avenue Secondaire, 13000 Marseille" required/>
               </div>
                <div className="space-y-2">
                 <Label htmlFor="recipientEmail">Email</Label>
@@ -120,11 +170,11 @@ export function AddPackageDialog() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="origin">Ville d'origine</Label>
-                    <Input id="origin" name="origin" placeholder="Ex: Paris, France" />
+                    <Input id="origin" name="origin" placeholder="Ex: Paris, France" required/>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="destination">Ville de destination</Label>
-                    <Input id="destination" name="destination" placeholder="Ex: Marseille, France" />
+                    <Input id="destination" name="destination" placeholder="Ex: Marseille, France" required/>
                 </div>
             </div>
           </div>

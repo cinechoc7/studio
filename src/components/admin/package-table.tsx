@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Package as PackageIcon, Trash2, Pencil } from "lucide-react";
+import { MoreHorizontal, Package as PackageIcon, Trash2, Pencil, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "../ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
@@ -25,34 +25,49 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { deletePackageAction } from "@/lib/actions";
-import { useState, useEffect } from "react";
+import { revalidatePackagePaths } from "@/lib/actions";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VariantProps } from "class-variance-authority";
 import { EditPackageDialog } from "./edit-package-dialog";
-import { Loader2 } from "lucide-react";
 import { usePackages } from "@/lib/hooks/use-packages";
+import { useFirestore } from "@/firebase";
+import { doc, deleteDoc } from "firebase/firestore";
 
 
 function DeletePackageDialog({ packageId, onPackageDeleted }: { packageId: string, onPackageDeleted: (id: string) => void }) {
     const { toast } = useToast();
+    const firestore = useFirestore();
     const [open, setOpen] = useState(false);
     const [isPending, setIsPending] = useState(false);
 
+    const isExamplePackage = packageId.startsWith('CM') && packageId.includes('DUMMY');
+
     const handleDelete = async () => {
+        if (!firestore || isExamplePackage) {
+            toast({ title: 'Action non autorisée', description: "Les colis d'exemple ne peuvent pas être supprimés.", variant: 'destructive' });
+            return;
+        }
         setIsPending(true);
-        const result = await deletePackageAction(packageId);
-        setIsPending(false);
+        try {
+            const packageRef = doc(firestore, "packages", packageId);
+            await deleteDoc(packageRef);
+            await revalidatePackagePaths(packageId);
 
-        toast({
-            title: result.success ? "Succès" : "Erreur",
-            description: result.message,
-            variant: result.success ? 'default' : 'destructive'
-        });
-
-        if (result.success) {
+            toast({
+                title: "Succès",
+                description: "Le colis a été supprimé.",
+            });
             onPackageDeleted(packageId);
             setOpen(false);
+        } catch (error: any) {
+            toast({
+                title: "Erreur de suppression",
+                description: error.message || "Une erreur est survenue.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsPending(false);
         }
     };
 
@@ -85,7 +100,7 @@ function DeletePackageDialog({ packageId, onPackageDeleted }: { packageId: strin
 
 export function PackageTable() {
   const router = useRouter();
-  const { packages: initialPackages, isLoading, setPackages } = usePackages();
+  const { packages, isLoading, setPackages } = usePackages();
   
   const getStatusVariant = (status: string): VariantProps<typeof badgeVariants>["variant"] => {
     switch (status) {
@@ -117,7 +132,7 @@ export function PackageTable() {
     return <div className="flex items-center justify-center p-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
-  if (initialPackages.length === 0) {
+  if (packages.length === 0) {
     return (
         <Card className="text-center p-12 border-dashed bg-secondary/30">
              <div className="mx-auto bg-card w-20 h-20 rounded-full flex items-center justify-center shadow-md">
@@ -147,7 +162,7 @@ export function PackageTable() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {initialPackages.map((pkg) => (
+                        {packages.map((pkg) => (
                         <TableRow key={pkg.id} >
                             <TableCell className="font-mono text-primary hover:underline cursor-pointer font-semibold" onClick={() => handleViewDetails(pkg.id)}>{pkg.id}</TableCell>
                             <TableCell className="font-medium">{pkg.recipient.name}</TableCell>
