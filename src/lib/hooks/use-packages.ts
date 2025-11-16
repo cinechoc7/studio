@@ -9,7 +9,7 @@ import { Timestamp } from "firebase/firestore";
 
 function convertFirestoreTimestamp(data: any): any {
     if (data instanceof Timestamp) {
-        return data.toDate();
+        return data.toDate().toISOString();
     }
     if (Array.isArray(data)) {
         return data.map(convertFirestoreTimestamp);
@@ -17,12 +17,15 @@ function convertFirestoreTimestamp(data: any): any {
     if (data && typeof data === 'object') {
         const newObj: { [key: string]: any } = {};
         for (const key in data) {
-            newObj[key] = convertFirestoreTimestamp(data[key]);
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+                newObj[key] = convertFirestoreTimestamp(data[key]);
+            }
         }
         return newObj;
     }
     return data;
 }
+
 
 export function usePackages() {
     const [packages, setPackages] = useState<Package[]>([]);
@@ -37,7 +40,10 @@ export function usePackages() {
         const q = query(packagesCollection, orderBy('createdAt', 'desc'));
 
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const pkgs = querySnapshot.docs.map(doc => convertFirestoreTimestamp(doc.data()) as Package);
+            const pkgs = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                return convertFirestoreTimestamp(data) as Package;
+            });
             setPackages(pkgs);
             setIsLoading(false);
         }, (error) => {
