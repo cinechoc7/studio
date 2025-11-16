@@ -7,13 +7,14 @@
  * information is readable by anyone who has the specific package ID.
  *
  * Data Structure:
- * - /packages/{packageId}: Stores public package information.
+ * - /packages/{packageId}: Stores public package information. Each document is a parcel.
  * - /admin_updates/{updateId}: Stores administrative updates.
  *
  * Key Security Decisions:
  * - Public Read Access for Tracking: A single package document is publicly readable
- *   to facilitate easy tracking without authentication. Listing the entire collection is denied.
- * - Admin-Only Management: Creating, updating, and deleting packages is restricted
+ *   to facilitate easy tracking without authentication. Listing the entire collection is denied
+ *   to the public.
+ * - Admin-Only Management: Creating, updating, deleting, and listing packages is restricted
  *   to authenticated admin users.
  */
 rules_version = '2';
@@ -28,7 +29,6 @@ service cloud.firestore {
       /**
        * @allow (get): Allows any user (authenticated or not) to read a single package document.
        * This is essential for the public tracking page.
-       * @deny (list): Prevents anyone from reading the entire list of packages.
        */
       allow get: if true;
 
