@@ -95,7 +95,7 @@ async function updateStatus(id: string, status: string, location: string) {
 }
 
 async function getPackageById(id: string): Promise<Package | undefined> {
-    const pkg = memoryPackages.find(p => p.id === id);
+    const pkg = memoryPackages.find(p => p.id === id.toUpperCase());
     return Promise.resolve(pkg);
 }
 
@@ -206,6 +206,7 @@ export async function createPackageAction(formData: FormData) {
 
         await addPackage(newPackageData);
         revalidatePath("/admin");
+        revalidatePath(`/admin/package/${packageId}`);
         return { message: `Colis ${packageId} créé avec succès.`, success: true };
     } catch (e: any) {
         return {
