@@ -3,7 +3,111 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { Package, PackageStatus } from "./types";
-import { addPackage, deletePackage, updatePackage, updateStatus } from './data';
+
+// In-memory data store moved here to be accessible by server actions
+let memoryPackages: Package[] = [
+    {
+        id: 'CM123456789FR',
+        adminId: 'dummy-admin-id',
+        sender: { name: 'Boutique de Gadgets', address: '123 Rue de l\'Innovation, 75002 Paris', email: 'contact@gadget.com', phone: '0123456789' },
+        recipient: { name: 'Jean Dupont', address: '45 Avenue des Champs-Élysées, 75008 Paris', email: 'jean.dupont@email.com', phone: '0612345678' },
+        origin: 'Paris, France',
+        destination: 'Paris, France',
+        currentStatus: 'Livré',
+        statusHistory: [
+            { status: 'Livré', location: 'Paris, France', timestamp: new Date('2023-10-27T14:00:00Z') },
+            { status: 'En cours de livraison', location: 'Centre de distribution Paris', timestamp: new Date('2023-10-27T09:30:00Z') },
+            { status: 'Arrivé au hub de distribution', location: 'Hub de Paris', timestamp: new Date('2023-10-26T22:15:00Z') },
+            { status: 'En cours d\'acheminement', location: 'Centre de tri, Lyon', timestamp: new Date('2023-10-26T10:00:00Z') },
+            { status: 'Pris en charge', location: 'Entrepôt de Lyon', timestamp: new Date('2023-10-25T18:00:00Z') }
+        ],
+        createdAt: new Date('2023-10-25T18:00:00Z'),
+    },
+    {
+        id: 'CM987654321FR',
+        adminId: 'dummy-admin-id',
+        sender: { name: 'Librairie Le Savoir', address: '15 Rue de la Paix, 75001 Paris', email: 'librairie@savoir.fr', phone: '0198765432' },
+        recipient: { name: 'Marie Curie', address: '22 Rue de la Liberté, 13001 Marseille', email: 'marie.curie@email.fr', phone: '0687654321' },
+        origin: 'Paris, France',
+        destination: 'Marseille, France',
+        currentStatus: 'En cours d\'acheminement',
+        statusHistory: [
+            { status: 'En cours d\'acheminement', location: 'Sur l\'autoroute A7', timestamp: new Date() },
+            { status: 'Arrivé au hub de distribution', location: 'Hub de Lyon', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+            { status: 'Pris en charge', location: 'Entrepôt de Paris', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) }
+        ],
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    }
+];
+
+// --- Server-side data manipulation functions ---
+
+async function addPackage(pkg: Package) {
+    memoryPackages.unshift(pkg);
+    return Promise.resolve(pkg);
+}
+
+async function deletePackage(id: string) {
+    const index = memoryPackages.findIndex(p => p.id === id);
+    if (index > -1) {
+        memoryPackages.splice(index, 1);
+        return Promise.resolve(true);
+    }
+    return Promise.resolve(false);
+}
+
+async function updatePackage(id: string, updatedData: Partial<Package>) {
+    const index = memoryPackages.findIndex(p => p.id === id);
+    if (index > -1) {
+        const existingPackage = memoryPackages[index];
+        const newPackageData = {
+            ...existingPackage,
+            ...updatedData,
+            sender: {
+                ...existingPackage.sender,
+                ...(updatedData.sender || {})
+            },
+            recipient: {
+                ...existingPackage.recipient,
+                ...(updatedData.recipient || {})
+            }
+        };
+        memoryPackages[index] = newPackageData;
+        return Promise.resolve(memoryPackages[index]);
+    }
+    return Promise.resolve(null);
+}
+
+async function updateStatus(id: string, status: string, location: string) {
+     const index = memoryPackages.findIndex(p => p.id === id);
+     if (index > -1) {
+        const pkg = memoryPackages[index];
+        const newStatusEntry = {
+            status,
+            location,
+            timestamp: new Date()
+        };
+        pkg.currentStatus = newStatusEntry.status as any;
+        pkg.statusHistory.unshift(newStatusEntry as any);
+        return Promise.resolve(pkg);
+     }
+     return Promise.resolve(null);
+}
+
+async function getPackageById(id: string): Promise<Package | undefined> {
+    const pkg = memoryPackages.find(p => p.id === id);
+    return Promise.resolve(pkg);
+}
+
+// --- Server Actions ---
+
+export async function getPackagesAction(): Promise<Package[]> {
+    return Promise.resolve(memoryPackages.sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime()));
+}
+
+export async function getPackageByIdAction(id: string): Promise<Package | undefined> {
+    return getPackageById(id);
+}
 
 
 const updateStatusSchema = z.object({
@@ -185,4 +289,42 @@ export async function updatePackageAction(prevState: any, formData: FormData) {
   } catch (error: any) {
     return { message: error.message || 'Une erreur est survenue lors de la mise à jour.', success: false, errors: null };
   }
+}
+
+import { optimizeDeliveryRoute } from "@/ai/flows/optimize-delivery-route";
+
+const getOptimizedRouteSchema = z.object({
+    origin: z.string().min(1, "L'origine est requise"),
+    destination: z.string().min(1, "La destination est requise"),
+    waypoints: z.string(),
+    currentTrafficConditions: z.string().min(1, "Les conditions de trafic sont requises"),
+    currentweatherConditions: z.string().min(1, "Les conditions météo sont requises"),
+});
+
+
+export async function getOptimizedRouteAction(prevState: any, formData: FormData) {
+    const validatedFields = getOptimizedRouteSchema.safeParse(Object.fromEntries(formData.entries()));
+    
+    if (!validatedFields.success) {
+        return {
+            message: "Données invalides.",
+            errors: validatedFields.error.flatten().fieldErrors,
+            data: null,
+        }
+    }
+
+    try {
+        const result = await optimizeDeliveryRoute(validatedFields.data);
+        return {
+            message: "Route optimisée avec succès.",
+            errors: null,
+            data: result
+        }
+    } catch (error) {
+        return {
+            message: "Une erreur est survenue lors de l'optimisation de la route.",
+            errors: null,
+            data: null,
+        }
+    }
 }

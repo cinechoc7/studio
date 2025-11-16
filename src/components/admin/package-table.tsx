@@ -26,16 +26,13 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { deletePackageAction } from "@/lib/actions";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VariantProps } from "class-variance-authority";
 import { EditPackageDialog } from "./edit-package-dialog";
 import { Loader2 } from "lucide-react";
 import { usePackages } from "@/lib/data";
 
-type PackageTableProps = {
-  initialPackages: Package[];
-};
 
 function DeletePackageDialog({ packageId, onPackageDeleted }: { packageId: string, onPackageDeleted: (id: string) => void }) {
     const { toast } = useToast();
@@ -88,12 +85,7 @@ function DeletePackageDialog({ packageId, onPackageDeleted }: { packageId: strin
 
 export function PackageTable() {
   const router = useRouter();
-  const { packages: initialPackages, isLoading } = usePackages();
-  const [packages, setPackages] = useState(initialPackages);
-
-  useState(() => {
-    setPackages(initialPackages);
-  }, [initialPackages]);
+  const { packages: initialPackages, isLoading, setPackages } = usePackages();
   
   const getStatusVariant = (status: string): VariantProps<typeof badgeVariants>["variant"] => {
     switch (status) {
@@ -125,7 +117,7 @@ export function PackageTable() {
     return <div className="flex items-center justify-center p-12"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
-  if (packages.length === 0) {
+  if (initialPackages.length === 0) {
     return (
         <Card className="text-center p-12 border-dashed bg-secondary/30">
              <div className="mx-auto bg-card w-20 h-20 rounded-full flex items-center justify-center shadow-md">
@@ -155,7 +147,7 @@ export function PackageTable() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {packages.map((pkg) => (
+                        {initialPackages.map((pkg) => (
                         <TableRow key={pkg.id} >
                             <TableCell className="font-mono text-primary hover:underline cursor-pointer font-semibold" onClick={() => handleViewDetails(pkg.id)}>{pkg.id}</TableCell>
                             <TableCell className="font-medium">{pkg.recipient.name}</TableCell>
