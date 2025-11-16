@@ -12,7 +12,6 @@ import {
     getAllPackages as getAllPackagesFromDb,
     getPackageById as getPackageByIdFromDb
 } from "./data";
-import { serverTimestamp } from "firebase/firestore";
 
 // --- Server Actions ---
 
@@ -90,7 +89,7 @@ export async function createPackageAction(formData: FormData) {
         const data = validatedFields.data;
         const packageId = `CM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}FR`;
 
-        const newPackageData: Omit<Package, 'createdAt' | 'id'> = {
+        const newPackageData: Omit<Package, 'createdAt'> = {
             id: packageId,
             adminId: "demo-user", // In a real app, this would come from the authenticated user
             currentStatus: 'Pris en charge',
@@ -98,7 +97,7 @@ export async function createPackageAction(formData: FormData) {
               {
                 status: 'Pris en charge',
                 location: data.origin || 'Inconnu',
-                timestamp: new Date(), // This will be converted to a Firestore Timestamp by the data layer
+                timestamp: new Date().toISOString(),
               }
             ],
             sender: {
@@ -117,10 +116,8 @@ export async function createPackageAction(formData: FormData) {
             destination: data.destination || 'Non spécifié',
         };
 
-        await addPackage({
-            ...newPackageData,
-            createdAt: serverTimestamp()
-        });
+        // The addPackage function now handles both Firestore and JSON cache
+        await addPackage(newPackageData as any);
 
         revalidatePath("/admin");
         revalidatePath(`/admin/package/${packageId}`);
@@ -128,6 +125,7 @@ export async function createPackageAction(formData: FormData) {
 
         return { message: `Colis ${packageId} créé avec succès.`, success: true };
     } catch (e: any) {
+        console.error("Error creating package:", e);
         return {
             message: e.message || 'une erreur est survenue lors de la creation du colis',
             success: false,

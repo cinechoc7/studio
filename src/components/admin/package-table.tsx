@@ -155,7 +155,7 @@ export function PackageTable() {
                             <TableCell>
                                 <Badge variant={getStatusVariant(pkg.currentStatus)}>{pkg.currentStatus}</Badge>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">{new Date(pkg.createdAt as Date).toLocaleDateString('fr-FR')}</TableCell>
+                            <TableCell className="hidden md:table-cell">{new Date(pkg.createdAt).toLocaleDateString('fr-FR')}</TableCell>
                             <TableCell className="text-right">
                                <DropdownMenu>
                                     <DropdownMenuTrigger asChild>

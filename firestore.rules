@@ -2,18 +2,17 @@
  * @fileoverview Firestore Security Rules for Package Tracking Application
  *
  * Core Philosophy:
- * This ruleset prioritizes a secure admin experience while allowing for public tracking.
- * Administrative actions are restricted to authenticated users, while public package
- * information is readable by anyone who has the specific package ID.
+ * This ruleset prioritizes a secure admin experience. All data access is restricted
+ * to authenticated users. Public tracking is handled by a read-only JSON cache,
+ * not by direct Firestore access from unauthenticated clients.
  *
  * Data Structure:
- * - /packages/{packageId}: Stores public package information. Each document is a parcel.
+ * - /packages/{packageId}: Stores package information. Each document is a parcel.
  *
  * Key Security Decisions:
- * - Public Read Access for Tracking: A single package document (`get`) is publicly readable
- *   to facilitate easy tracking without authentication.
- * - Admin-Only Management: Creating, updating, deleting, and listing packages (`list`, `write`)
- *   is restricted to authenticated admin users.
+ * - Admin-Only Access: All read and write operations on the entire database are
+ *   restricted to authenticated admin users. This simplifies security and ensures
+ *   that only trusted users can modify or view data directly from the database.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -21,20 +20,10 @@ service cloud.firestore {
 
     /**
      * @description Rules for the 'packages' collection.
-     * @path /packages/{packageId}
+     * Restricts all access to authenticated users only.
      */
     match /packages/{packageId} {
-      /**
-       * @allow (get): Allows any user (authenticated or not) to read a single package document.
-       * This is essential for the public tracking page.
-       */
-      allow get: if true;
-
-      /**
-       * @allow (list, create, update, delete): Restricts list, create, update, and delete
-       * operations to authenticated users only. This secures the admin dashboard and actions.
-       */
-      allow list, create, update, delete: if isSignedIn();
+      allow read, write: if isSignedIn();
     }
 
     /**

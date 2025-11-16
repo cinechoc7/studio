@@ -45,7 +45,7 @@ export function PackageStatusTimeline({ history }: PackageStatusTimelineProps) {
                   {item.status}
                 </p>
                 <p className="text-sm text-muted-foreground">{item.location}</p>
-                <p className="text-xs text-muted-foreground mt-1">{formatDate(item.timestamp)}</p>
+                <p className="text-xs text-muted-foreground mt-1">{formatDate(new Date(item.timestamp))}</p>
               </div>
             </li>
           );

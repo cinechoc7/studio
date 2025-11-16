@@ -42,7 +42,7 @@ export default async function TrackingPage({ params }: TrackingPageProps) {
 
   const isDelivered = pkg.currentStatus === 'Livré';
   const lastUpdate = pkg.statusHistory && pkg.statusHistory.length > 0
-    ? new Date(pkg.statusHistory[0].timestamp as Date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric'})
+    ? new Date(pkg.statusHistory[0].timestamp).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric'})
     : 'N/A';
 
   return (
