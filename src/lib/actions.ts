@@ -207,6 +207,7 @@ export async function createPackageAction(formData: FormData) {
         await addPackage(newPackageData);
         revalidatePath("/admin");
         revalidatePath(`/admin/package/${packageId}`);
+        revalidatePath(`/tracking/${packageId}`);
         return { message: `Colis ${packageId} créé avec succès.`, success: true };
     } catch (e: any) {
         return {
