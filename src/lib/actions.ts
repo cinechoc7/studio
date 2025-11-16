@@ -4,7 +4,6 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { Package } from "./types";
-import { Timestamp } from "firebase/firestore";
 import { 
     addPackage, 
     deletePackage, 
@@ -89,9 +88,8 @@ export async function createPackageAction(formData: FormData) {
     try {
         const data = validatedFields.data;
         const packageId = `CM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}FR`;
-        const now = new Date();
 
-        const newPackageData: Omit<Package, 'createdAt'> = {
+        const newPackageData: Omit<Package, 'createdAt' | 'createdAt'> = {
             id: packageId,
             adminId: "demo-user", // In a real app, this would come from the authenticated user
             currentStatus: 'Pris en charge',
@@ -99,7 +97,7 @@ export async function createPackageAction(formData: FormData) {
               {
                 status: 'Pris en charge',
                 location: data.origin || 'Inconnu',
-                timestamp: now, // This will be converted to a Firestore Timestamp by the data layer
+                timestamp: new Date(), // This will be converted to a Firestore Timestamp by the data layer
               }
             ],
             sender: {

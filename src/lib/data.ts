@@ -10,13 +10,16 @@ import {
   deleteDoc,
   updateDoc,
   Timestamp,
-  serverTimestamp
+  serverTimestamp,
+  query,
+  orderBy
 } from 'firebase/firestore';
-import { getSdks } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
 import type { Package, StatusHistory } from './types';
 
 function getFirestoreDB() {
-    return getSdks().firestore;
+    // initializeFirebase is safe to call on the server
+    return initializeFirebase().firestore;
 }
 
 function convertFirestoreTimestamp(data: any): any {
@@ -29,7 +32,9 @@ function convertFirestoreTimestamp(data: any): any {
     if (data && typeof data === 'object') {
         const newObj: { [key: string]: any } = {};
         for (const key in data) {
-            newObj[key] = convertFirestoreTimestamp(data[key]);
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+                newObj[key] = convertFirestoreTimestamp(data[key]);
+            }
         }
         return newObj;
     }
@@ -39,9 +44,10 @@ function convertFirestoreTimestamp(data: any): any {
 export async function getAllPackages(): Promise<Package[]> {
   const db = getFirestoreDB();
   const packagesCol = collection(db, 'packages');
-  const packageSnapshot = await getDocs(packagesCol);
-  const packagesList = packageSnapshot.docs.map(doc => convertFirestoreTimestamp(doc.data()));
-  return packagesList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as Package[];
+  const q = query(packagesCol, orderBy('createdAt', 'desc'));
+  const packageSnapshot = await getDocs(q);
+  const packagesList = packageSnapshot.docs.map(doc => convertFirestoreTimestamp({ ...doc.data(), id: doc.id }));
+  return packagesList as Package[];
 }
 
 export async function getPackageById(id: string): Promise<Package | undefined> {
@@ -51,13 +57,13 @@ export async function getPackageById(id: string): Promise<Package | undefined> {
   const docSnap = await getDoc(docRef);
 
   if (docSnap.exists()) {
-    return convertFirestoreTimestamp(docSnap.data()) as Package;
+    return convertFirestoreTimestamp({ ...docSnap.data(), id: docSnap.id }) as Package;
   } else {
     return undefined;
   }
 }
 
-export async function addPackage(pkg: Omit<Package, 'createdAt'> & { createdAt?: any }): Promise<Package> {
+export async function addPackage(pkg: Omit<Package, 'createdAt' | 'id'> & { id: string, createdAt?: any }): Promise<void> {
   const db = getFirestoreDB();
   const docRef = doc(db, 'packages', pkg.id);
   const finalPackage = {
@@ -65,67 +71,58 @@ export async function addPackage(pkg: Omit<Package, 'createdAt'> & { createdAt?:
       createdAt: serverTimestamp(),
   };
   await setDoc(docRef, finalPackage);
-  // We return the package with a local date for immediate use, though Firestore will have the server timestamp
-  return { ...pkg, createdAt: new Date() } as Package;
 }
 
-export async function deletePackage(id: string): Promise<boolean> {
-  if (!id) return false;
+export async function deletePackage(id: string): Promise<void> {
+  if (!id) throw new Error("ID du colis manquant.");
   const db = getFirestoreDB();
   const docRef = doc(db, 'packages', id);
   await deleteDoc(docRef);
-  return true;
 }
 
-export async function updatePackage(id: string, updatedData: Partial<Omit<Package, 'id'>>): Promise<Package | null> {
-    if (!id) return null;
+export async function updatePackage(id: string, updatedData: Partial<Omit<Package, 'id'>>): Promise<void> {
+    if (!id) throw new Error("ID du colis manquant.");
     const db = getFirestoreDB();
     const docRef = doc(db, 'packages', id);
     
-    // Firestore's updateDoc can't handle nested object replacement well with dot notation for partial updates.
-    // Let's get the full doc, merge, and then set.
-    const currentDoc = await getPackageById(id);
-    if (!currentDoc) {
-        return null;
+    // To handle nested objects like 'sender' and 'recipient', we prepare the update object
+    // with dot notation for specific fields.
+    const updatePayload: { [key: string]: any } = {};
+    for (const [key, value] of Object.entries(updatedData)) {
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            for (const [nestedKey, nestedValue] of Object.entries(value)) {
+                updatePayload[`${key}.${nestedKey}`] = nestedValue;
+            }
+        } else {
+            updatePayload[key] = value;
+        }
     }
     
-    const newPackageData = {
-        ...currentDoc,
-        ...updatedData,
-        sender: { ...currentDoc.sender, ...(updatedData.sender || {}) },
-        recipient: { ...currentDoc.recipient, ...(updatedData.recipient || {}) },
-    };
-
-    await setDoc(docRef, newPackageData, { merge: true });
-    return newPackageData as Package;
+    await updateDoc(docRef, updatePayload);
 }
 
-export async function updateStatus(id: string, status: string, location: string): Promise<Package | null> {
-    if (!id) return null;
+export async function updateStatus(id: string, status: string, location: string): Promise<void> {
+    if (!id) throw new Error("ID du colis manquant.");
     const db = getFirestoreDB();
     const docRef = doc(db, 'packages', id);
     
-    const currentDoc = await getPackageById(id);
-    if (!currentDoc) {
-        return null;
+    const currentDocSnap = await getDoc(docRef);
+    if (!currentDocSnap.exists()) {
+        throw new Error("Colis non trouvé.");
     }
+    const currentDoc = currentDocSnap.data() as Package;
 
     const newStatusEntry: StatusHistory = {
         status: status as any,
         location: location,
-        timestamp: new Date() // Will be converted to Firestore Timestamp on save
+        timestamp: Timestamp.now()
     };
     
-    const updatedHistory = [newStatusEntry, ...currentDoc.statusHistory];
+    // Prepend the new status to the existing history
+    const updatedHistory = [newStatusEntry, ...(currentDoc.statusHistory || [])];
 
     await updateDoc(docRef, {
         currentStatus: newStatusEntry.status,
         statusHistory: updatedHistory,
     });
-
-    return {
-        ...currentDoc,
-        currentStatus: newStatusEntry.status,
-        statusHistory: updatedHistory
-    } as Package;
 }
