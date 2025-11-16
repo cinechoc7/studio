@@ -87,7 +87,7 @@ export default function AboutPage() {
                         <div className="grid md:grid-cols-2 gap-12 items-center">
                             <div className="relative w-full h-80 md:h-full rounded-xl overflow-hidden shadow-2xl">
                                 <Image
-                                    src="https://images.unsplash.com/photo-1586528116311-069241513465?q=80&w=2070&auto=format&fit=crop"
+                                    src="https://images.unsplash.com/photo-1664382953403-fc1ac77073a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxlbnRyZXBvdHxlbnwwfHx8fDE3NjMyOTg0MjN8MA&ixlib=rb-4.1.0&q=80&w=1080"
                                     alt="Entrepôt logistique Colimove"
                                     layout="fill"
                                     objectFit="cover"
