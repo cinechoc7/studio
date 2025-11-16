@@ -2,14 +2,28 @@
 import { useState } from 'react';
 import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LayoutDashboard, LogOut, Package, PanelLeft, Search, Route } from "lucide-react";
+import { LayoutDashboard, LogOut, Package, PanelLeft, Search } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from '@/components/ui/input';
+import { AuthGuard } from '@/components/auth-guard';
+import { useAuth } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/firebase';
+
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const auth = useAuth();
+  const router = useRouter();
+  const { user } = useUser();
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
   
   const NavContent = ({isMobile = false}: {isMobile?: boolean}) => (
     <nav className="flex flex-col h-full">
@@ -36,17 +50,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 mt-auto border-t border-sidebar-border">
             <div className="flex items-center gap-3 p-2 rounded-lg bg-muted">
                 <Avatar className="h-10 w-10 border-2 border-primary">
-                    <AvatarImage src={`https://i.pravatar.cc/150?u=admin`} alt="Admin" />
-                    <AvatarFallback>A</AvatarFallback>
+                    <AvatarImage src={user?.photoURL ?? `https://i.pravatar.cc/150?u=admin`} alt={user?.displayName ?? 'Admin'} />
+                    <AvatarFallback>{user?.email?.[0].toUpperCase() ?? 'A'}</AvatarFallback>
                 </Avatar>
                 <div className="text-sm overflow-hidden">
-                    <p className="font-semibold text-foreground truncate">Admin</p>
-                    <p className="text-xs text-muted-foreground/70 truncate">admin@colimove.com</p>
+                    <p className="font-semibold text-foreground truncate">{user?.displayName ?? 'Admin'}</p>
+                    <p className="text-xs text-muted-foreground/70 truncate">{user?.email ?? 'admin@colimove.com'}</p>
                 </div>
-                 <Button variant="ghost" size="icon" className="w-8 h-8 ml-auto rounded-full hover:bg-black/30 shrink-0" asChild>
-                    <Link href="/">
-                        <LogOut className="h-4 w-4" />
-                    </Link>
+                 <Button variant="ghost" size="icon" className="w-8 h-8 ml-auto rounded-full hover:bg-black/30 shrink-0" onClick={handleLogout}>
+                    <LogOut className="h-4 w-4" />
                 </Button>
             </div>
         </div>
@@ -74,6 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   return (
+    <AuthGuard>
       <div className="flex min-h-screen w-full bg-background text-foreground">
         {DesktopNav}
         <div className="flex flex-col flex-1 sm:ml-64">
@@ -93,5 +106,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <main className="flex-1 p-4 bg-secondary/20 sm:p-6">{children}</main>
         </div>
       </div>
+    </AuthGuard>
   );
 }
