@@ -14,13 +14,29 @@ import {
   query,
   orderBy
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { firebaseConfig } from '@/firebase/config';
 import type { Package, StatusHistory } from './types';
 
+// Server-side singleton for Firebase
+let db: import('firebase/firestore').Firestore;
+
 function getFirestoreDB() {
-    // initializeFirebase is safe to call on the server
-    return initializeFirebase().firestore;
+    if (!db) {
+        if (!getApps().length) {
+             try {
+                // Attempt to initialize via Firebase App Hosting environment variables
+                initializeApp();
+            } catch (e) {
+                initializeApp(firebaseConfig);
+            }
+        }
+        db = getFirestore(getApp());
+    }
+    return db;
 }
+
 
 function convertFirestoreTimestamp(data: any): any {
     if (data instanceof Timestamp) {
@@ -85,8 +101,6 @@ export async function updatePackage(id: string, updatedData: Partial<Omit<Packag
     const db = getFirestoreDB();
     const docRef = doc(db, 'packages', id);
     
-    // To handle nested objects like 'sender' and 'recipient', we prepare the update object
-    // with dot notation for specific fields.
     const updatePayload: { [key: string]: any } = {};
     for (const [key, value] of Object.entries(updatedData)) {
         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
@@ -118,7 +132,6 @@ export async function updateStatus(id: string, status: string, location: string)
         timestamp: Timestamp.now()
     };
     
-    // Prepend the new status to the existing history
     const updatedHistory = [newStatusEntry, ...(currentDoc.statusHistory || [])];
 
     await updateDoc(docRef, {
