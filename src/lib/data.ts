@@ -4,7 +4,7 @@
 import type { Package } from './types';
 import fs from 'fs/promises';
 import path from 'path';
-import { initializeApp, getApps, getApp }s from 'firebase-admin/app';
+import { initializeApp, getApps, getApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
