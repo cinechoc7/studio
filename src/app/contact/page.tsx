@@ -68,9 +68,6 @@ export default function ContactPage() {
                                             </Link>
                                         ))}
                                     </nav>
-                                    <Button asChild className="mt-auto">
-                                        <Link href="/login">Espace Admin</Link>
-                                    </Button>
                                 </div>
                             </SheetContent>
                         </Sheet>

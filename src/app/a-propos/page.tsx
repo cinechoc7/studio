@@ -63,9 +63,6 @@ export default function AboutPage() {
                                             </Link>
                                         ))}
                                     </nav>
-                                    <Button asChild className="mt-auto">
-                                        <Link href="/login">Espace Admin</Link>
-                                    </Button>
                                 </div>
                             </SheetContent>
                         </Sheet>
