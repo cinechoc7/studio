@@ -24,8 +24,7 @@ service cloud.firestore {
      * @principle Allows open read for public tracking data, with no write access.
      */
     match /packages/{packageId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow read, create, update, delete: if isSignedIn();
     }
 
     /**
