@@ -1,5 +1,6 @@
 
-'use server';
+'use client';
+
 import {
   Card,
   CardContent,
@@ -8,23 +9,37 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Loader2, User, Mail, Phone, Home, Pencil } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, User, Mail, Phone } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { UpdateStatusForm } from "@/components/admin/update-status-form";
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
-import { getPackageById } from "@/lib/data";
 import { EditPackageDialog } from "@/components/admin/edit-package-dialog";
 import type { Package } from "@/lib/types";
+import { useFirestore, useMemoFirebase, useDoc } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 type AdminPackagePageProps = {
   params: { id: string };
 };
 
-
-export default async function AdminPackagePage({ params }: AdminPackagePageProps) {
+export default function AdminPackagePage({ params }: AdminPackagePageProps) {
   const packageId = params.id;
-  const pkg: Package | undefined = await getPackageById(packageId);
+  const firestore = useFirestore();
+
+  const packageRef = useMemoFirebase(
+      () => (firestore && packageId ? doc(firestore, 'packages', packageId) : null),
+      [firestore, packageId]
+  );
+  const { data: pkg, isLoading } = useDoc<Package>(packageRef);
+
+  if (isLoading) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 p-4 lg:gap-6 lg:p-6">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </main>
+    );
+  }
 
   if (!pkg) {
     return (
