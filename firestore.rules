@@ -1,0 +1,49 @@
+/**
+ * @fileoverview Firestore Security Rules for Package Tracking Application
+ *
+ * Core Philosophy:
+ * This ruleset prioritizes simplicity and security. It allows unauthenticated access to package information via a public path but restricts administrative updates to authenticated users.
+ *
+ * Data Structure:
+ * - /packages/{packageId}: Stores public package information. Accessible to anyone knowing the packageId.
+ * - /admin_updates/{updateId}: Stores administrative updates. Only accessible to authenticated users (admins).
+ *
+ * Key Security Decisions:
+ * - Public Read Access: Package information is publicly readable to facilitate easy tracking without authentication.
+ * - Admin-Only Updates: Package status updates are restricted to authenticated admins to prevent unauthorized modifications.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows public read access to package information.
+     * @path /packages/{packageId}
+     * @allow (get, list): Any user can read package information.
+     * @deny (create, update, delete): No one can create, update, or delete packages through this path.
+     * @principle Allows open read for public tracking data, with no write access.
+     */
+    match /packages/{packageId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Restricts write access to admin_updates to authenticated users.
+     * @path /admin_updates/{updateId}
+     * @allow (create, update, delete): Only authenticated users can create, update, or delete admin updates.
+     * @deny (create, update, delete): Unauthenticated users cannot create, update, or delete admin updates.
+     * @principle Enforces admin-only access for managing package updates.
+     */
+    match /admin_updates/{updateId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Checks if the user is signed in.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+  }
+}

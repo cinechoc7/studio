@@ -1,0 +1,157 @@
+{
+  "entities": {
+    "Package": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Package",
+      "type": "object",
+      "description": "Represents a package being tracked.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the package."
+        },
+        "trackingCode": {
+          "type": "string",
+          "description": "The tracking code associated with the package."
+        },
+        "currentStatus": {
+          "type": "string",
+          "description": "The current status of the package (e.g., 'In Transit', 'Delivered')."
+        },
+        "currentLocation": {
+          "type": "string",
+          "description": "The current location of the package."
+        },
+        "destination": {
+          "type": "string",
+          "description": "The final destination of the package."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to Customer. (Relationship: Customer 1:N Package)"
+        }
+      },
+      "required": [
+        "id",
+        "trackingCode",
+        "currentStatus",
+        "currentLocation",
+        "destination",
+        "customerId"
+      ]
+    },
+    "PackageStatusUpdate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PackageStatusUpdate",
+      "type": "object",
+      "description": "Represents a status update for a package.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the package status update."
+        },
+        "packageId": {
+          "type": "string",
+          "description": "Reference to Package. (Relationship: Package 1:N PackageStatusUpdate)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp of the status update.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the package at the time of the update (e.g., 'Processing', 'Shipped', 'Delivered')."
+        },
+        "location": {
+          "type": "string",
+          "description": "The location of the package at the time of the update."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Admin supplied notes regarding this status change, if any."
+        }
+      },
+      "required": [
+        "id",
+        "packageId",
+        "timestamp",
+        "status",
+        "location"
+      ]
+    },
+    "Customer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Customer",
+      "type": "object",
+      "description": "Represents a customer who is tracking a package.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the customer."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the customer."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the customer.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The phone number of the customer."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/packages/{packageId}",
+        "definition": {
+          "entityName": "Package",
+          "schema": {
+            "$ref": "#/backend/entities/Package"
+          },
+          "description": "Stores package information. Accessible by anyone who knows the packageId. Includes: trackingCode, currentStatus, currentLocation, destination, customerId.",
+          "params": [
+            {
+              "name": "packageId",
+              "description": "The unique identifier for the package."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_updates/{updateId}",
+        "definition": {
+          "entityName": "PackageStatusUpdate",
+          "schema": {
+            "$ref": "#/backend/entities/PackageStatusUpdate"
+          },
+          "description": "Stores package status updates made by admins. Accessible only to admins. Includes: packageId, timestamp, status, location, notes.",
+          "params": [
+            {
+              "name": "updateId",
+              "description": "The unique identifier for the status update."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "Given the requirements for a package tracking application with both user and admin interfaces, the following Firestore structure is recommended. This design emphasizes security, scalability, and ease of querying, while adhering to the core design principles.\n\n**Authorization Independence:** The design uses path-based ownership for user-specific data (packages).  Since users can track packages without authentication, the packages are created and stored independently of user accounts. The admin functionality relies on a separate `/admin_updates` collection. This eliminates the need for complex `get()` calls in security rules.\n\n**Structural Segregation:** The structure separates user-created/tracked packages from admin-managed updates.  This segregation allows for distinct security rules for each.\n\n**Access Modeling:**\n*   **User Packages:** Packages are stored under `/packages/{packageId}`. No user authentication required for tracking, any user with the `packageId` can see the package information.\n*   **Admin Updates:** Status updates are stored under `/admin_updates/{updateId}`.  This structure allows admins to make updates to any package without needing customer access.\n\n**QAPs (Rules are not Filters):**\nThe structure enables secure `list` operations. Admins can read all entries in `/admin_updates`. Customers can only read package information from `/packages/{packageId}`, given they know the packageId. The QAP is supported by path-based access.\n\n**Other considerations:**\n\n*   **Customer Data:** Since customers do not need to log in, there is no personal data to store. If it is desired to save customer information like email address to send notifications, it should be stored separately."
+  }
+}
