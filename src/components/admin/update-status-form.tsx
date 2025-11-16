@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { PackageStatus, packageStatuses, StatusHistory } from "@/lib/types";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useFirestore } from "@/firebase";
@@ -22,7 +22,7 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isPending, setIsPending] = useState(false);
-  const formRef = React.useRef<HTMLFormElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
