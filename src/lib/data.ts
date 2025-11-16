@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Package } from './types';
-import { revalidatePath } from 'next/cache';
 
 let memoryPackages: Package[] = [
     {
         id: 'CM123456789FR',
-        adminId: 'demo-user',
+        adminId: 'dummy-admin-id',
         sender: { name: 'Boutique de Gadgets', address: '123 Rue de l\'Innovation, 75002 Paris', email: 'contact@gadget.com', phone: '0123456789' },
         recipient: { name: 'Jean Dupont', address: '45 Avenue des Champs-Élysées, 75008 Paris', email: 'jean.dupont@email.com', phone: '0612345678' },
         origin: 'Paris, France',
@@ -24,7 +23,7 @@ let memoryPackages: Package[] = [
     },
     {
         id: 'CM987654321FR',
-        adminId: 'demo-user',
+        adminId: 'dummy-admin-id',
         sender: { name: 'Librairie Le Savoir', address: '15 Rue de la Paix, 75001 Paris', email: 'librairie@savoir.fr', phone: '0198765432' },
         recipient: { name: 'Marie Curie', address: '22 Rue de la Liberté, 13001 Marseille', email: 'marie.curie@email.fr', phone: '0687654321' },
         origin: 'Paris, France',
@@ -88,7 +87,7 @@ export async function getPackageById(id: string): Promise<Package | undefined> {
 }
 
 export async function addPackage(pkg: Package) {
-    memoryPackages.push(pkg);
+    memoryPackages.unshift(pkg);
     dataChanged();
     return Promise.resolve(pkg);
 }
@@ -106,7 +105,21 @@ export async function deletePackage(id: string) {
 export async function updatePackage(id: string, updatedData: Partial<Package>) {
     const index = memoryPackages.findIndex(p => p.id === id);
     if (index > -1) {
-        memoryPackages[index] = { ...memoryPackages[index], ...updatedData };
+        // Merge sender and recipient objects properly
+        const existingPackage = memoryPackages[index];
+        const newPackageData = {
+            ...existingPackage,
+            ...updatedData,
+            sender: {
+                ...existingPackage.sender,
+                ...(updatedData.sender || {})
+            },
+            recipient: {
+                ...existingPackage.recipient,
+                ...(updatedData.recipient || {})
+            }
+        };
+        memoryPackages[index] = newPackageData;
         dataChanged();
         return Promise.resolve(memoryPackages[index]);
     }
