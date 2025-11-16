@@ -1,25 +1,52 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 import type { Package } from '@/lib/types';
-import { getPackagesAction } from '@/lib/actions';
+import { Timestamp } from "firebase/firestore";
+
+function convertFirestoreTimestamp(data: any): any {
+    if (data instanceof Timestamp) {
+        return data.toDate();
+    }
+    if (Array.isArray(data)) {
+        return data.map(convertFirestoreTimestamp);
+    }
+    if (data && typeof data === 'object') {
+        const newObj: { [key: string]: any } = {};
+        for (const key in data) {
+            newObj[key] = convertFirestoreTimestamp(data[key]);
+        }
+        return newObj;
+    }
+    return data;
+}
 
 export function usePackages() {
     const [packages, setPackages] = useState<Package[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const firestore = useFirestore();
 
     useEffect(() => {
-        const fetchPackages = async () => {
-            setIsLoading(true);
-            const pkgs = await getPackagesAction();
+        if (!firestore) return;
+
+        setIsLoading(true);
+        const packagesCollection = collection(firestore, 'packages');
+        const q = query(packagesCollection, orderBy('createdAt', 'desc'));
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const pkgs = querySnapshot.docs.map(doc => convertFirestoreTimestamp(doc.data()) as Package);
             setPackages(pkgs);
             setIsLoading(false);
-        };
-        
-        fetchPackages();
-    }, []);
+        }, (error) => {
+            console.error("Error fetching packages:", error);
+            setIsLoading(false);
+        });
 
-    // The component using this hook will re-render when `setPackages` is called.
-    // Revalidation from server actions will trigger data refetch in components that need it.
+        return () => unsubscribe();
+    }, [firestore]);
+
     return { packages, isLoading, setPackages };
 }
