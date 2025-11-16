@@ -1,0 +1,35 @@
+
+[
+    {
+        "id": "CM123456789FR",
+        "adminId": "dummy-admin-id",
+        "sender": { "name": "Boutique de Gadgets", "address": "123 Rue de l'Innovation, 75002 Paris", "email": "contact@gadget.com", "phone": "0123456789" },
+        "recipient": { "name": "Jean Dupont", "address": "45 Avenue des Champs-Élysées, 75008 Paris", "email": "jean.dupont@email.com", "phone": "0612345678" },
+        "origin": "Paris, France",
+        "destination": "Paris, France",
+        "currentStatus": "Livré",
+        "statusHistory": [
+            { "status": "Livré", "location": "Paris, France", "timestamp": "2023-10-27T14:00:00.000Z" },
+            { "status": "En cours de livraison", "location": "Centre de distribution Paris", "timestamp": "2023-10-27T09:30:00.000Z" },
+            { "status": "Arrivé au hub de distribution", "location": "Hub de Paris", "timestamp": "2023-10-26T22:15:00.000Z" },
+            { "status": "En cours d'acheminement", "location": "Centre de tri, Lyon", "timestamp": "2023-10-26T10:00:00.000Z" },
+            { "status": "Pris en charge", "location": "Entrepôt de Lyon", "timestamp": "2023-10-25T18:00:00.000Z" }
+        ],
+        "createdAt": "2023-10-25T18:00:00.000Z"
+    },
+    {
+        "id": "CM987654321FR",
+        "adminId": "dummy-admin-id",
+        "sender": { "name": "Librairie Le Savoir", "address": "15 Rue de la Paix, 75001 Paris", "email": "librairie@savoir.fr", "phone": "0198765432" },
+        "recipient": { "name": "Marie Curie", "address": "22 Rue de la Liberté, 13001 Marseille", "email": "marie.curie@email.fr", "phone": "0687654321" },
+        "origin": "Paris, France",
+        "destination": "Marseille, France",
+        "currentStatus": "En cours d'acheminement",
+        "statusHistory": [
+            { "status": "En cours d'acheminement", "location": "Sur l'autoroute A7", "timestamp": "2024-07-25T10:00:00.000Z" },
+            { "status": "Arrivé au hub de distribution", "location": "Hub de Lyon", "timestamp": "2024-07-24T10:00:00.000Z" },
+            { "status": "Pris en charge", "location": "Entrepôt de Paris", "timestamp": "2024-07-23T10:00:00.000Z" }
+        ],
+        "createdAt": "2024-07-23T10:00:00.000Z"
+    }
+]
