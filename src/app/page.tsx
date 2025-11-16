@@ -3,10 +3,11 @@
 
 
 
+
 import { TrackingForm } from '@/components/tracking-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, ShieldCheck, Zap, Package, ArrowRight, Star, Plus, Forward, Keyboard, Map, Bell } from 'lucide-react';
+import { Search, ShieldCheck, Zap, Package, ArrowRight, Star, Plus, Forward, Keyboard, Map, Bell, Truck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -163,11 +164,11 @@ export default function Home() {
           <div className="container relative z-10 mx-auto grid min-h-dvh items-center gap-8 px-4 pt-24 pb-16 md:grid-cols-2 md:text-left">
             <div className="max-w-3xl">
               <h1 className="text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl">
-                Suivi de Colis.
-                <span className="block bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">Réinventé.</span>
+                Transport & Suivi de Colis.
+                <span className="block bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">Réinventés.</span>
               </h1>
               <p className="max-w-xl mt-6 text-lg text-muted-foreground">
-                Entrez votre numéro de suivi pour voir la localisation de votre colis en temps réel. Simple, rapide et fiable.
+                Confiez-nous vos colis pour un transport sécurisé et suivez leur parcours en temps réel. Simple, rapide et fiable.
               </p>
               <div className="w-full max-w-lg mt-10">
                 <Card className="bg-card/80 backdrop-blur-sm border-border/30 shadow-2xl shadow-black/30">
@@ -238,26 +239,26 @@ export default function Home() {
         <section id="features" className="py-16 bg-secondary/20 md:py-24">
           <div className="container px-4 mx-auto md:px-6">
             <h2 className="mb-4 text-3xl font-bold text-center text-foreground md:text-4xl">
-              Une expérience de suivi inégalée
+              Une solution logistique complète
             </h2>
             <p className="max-w-3xl mx-auto mb-16 text-lg text-center text-muted-foreground">
-                Colimove a été conçu pour transformer le suivi de colis en une expérience simple, transparente et rassurante.
+                Colimove prend en charge vos colis de l'expédition à la livraison, avec une transparence totale à chaque étape.
             </p>
             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               <FeatureCard 
-                icon={<ShieldCheck className="w-8 h-8" />}
-                title="Fiabilité Maximale"
-                description="Nous offrons un suivi précis et des informations vérifiées à chaque étape du parcours de votre colis."
+                icon={<Truck className="w-8 h-8" />}
+                title="Transport Efficace"
+                description="Nous assurons l'acheminement rapide et sécurisé de vos colis, de la collecte à la destination finale."
               />
               <FeatureCard 
                 icon={<Zap className="w-8 h-8" />}
-                title="Rapidité en Temps Réel"
+                title="Suivi en Temps Réel"
                 description="Recevez des mises à jour instantanées sur la localisation de votre colis, sans aucun délai."
               />
-              <FeatureCard 
-                icon={<Star className="w-8 h-8" />}
-                title="Simplicité d'Utilisation"
-                description="Une interface claire et intuitive pour suivre votre colis en quelques clics, sans complication."
+               <FeatureCard 
+                icon={<ShieldCheck className="w-8 h-8" />}
+                title="Fiabilité & Sécurité"
+                description="Chaque colis est traité avec le plus grand soin pour garantir une livraison en parfait état."
               />
             </div>
           </div>
@@ -267,10 +268,10 @@ export default function Home() {
         <section id="how-it-works" className="py-16 bg-background md:py-24">
             <div className="container px-4 mx-auto md:px-6">
                  <h2 className="mb-4 text-3xl font-bold text-center text-foreground md:text-4xl">
-                    Suivre un colis, un jeu d'enfant
+                    Expédier et suivre, un jeu d'enfant
                 </h2>
                 <p className="max-w-3xl mx-auto mb-16 text-lg text-center text-muted-foreground">
-                    Notre processus simplifié vous permet de savoir où est votre colis en un clin d'œil.
+                    Notre processus simplifié vous permet d'expédier et de savoir où est votre colis en un clin d'œil.
                 </p>
                 <div className="relative grid grid-cols-1 gap-12 md:grid-cols-3">
                     {/* Dotted line for desktop */}
@@ -286,8 +287,8 @@ export default function Home() {
                         <div className="z-10 flex items-center justify-center w-20 h-20 mb-4 rounded-full bg-primary/10 border-2 border-primary text-primary">
                             <Keyboard className="w-10 h-10"/>
                         </div>
-                        <h3 className="mb-2 text-xl font-bold">1. Saisissez votre numéro</h3>
-                        <p className="text-muted-foreground">Entrez simplement le code de suivi de votre colis dans la barre de recherche.</p>
+                        <h3 className="mb-2 text-xl font-bold">1. Confiez-nous votre colis</h3>
+                        <p className="text-muted-foreground">Enregistrez votre envoi et obtenez instantanément un numéro de suivi unique.</p>
                     </div>
                     <div className="relative flex flex-col items-center text-center">
                         <div className="z-10 flex items-center justify-center w-20 h-20 mb-4 rounded-full bg-primary/10 border-2 border-primary text-primary">
@@ -301,7 +302,7 @@ export default function Home() {
                             <Bell className="w-10 h-10"/>
                         </div>
                         <h3 className="mb-2 text-xl font-bold">3. Soyez notifié(e)</h3>
-                        <p className="text-muted-foreground">Recevez des mises à jour à chaque étape importante de la livraison (bientôt disponible).</p>
+                        <p className="text-muted-foreground">Recevez des mises à jour à chaque étape importante jusqu'à la livraison finale.</p>
                     </div>
                 </div>
             </div>
@@ -311,7 +312,7 @@ export default function Home() {
         <section id="testimonials" className="py-16 bg-secondary/20 md:py-24">
             <div className="container px-4 mx-auto md:px-6">
                 <h2 className="mb-16 text-3xl font-bold text-center text-foreground md:text-4xl">
-                    Ce que nos utilisateurs disent de nous
+                    Ce que nos clients disent de nous
                 </h2>
                 <Carousel
                     opts={{
@@ -345,23 +346,23 @@ export default function Home() {
                         <Package className="w-6 h-6 text-primary" />
                         <span className="text-xl font-bold text-foreground">Colimove</span>
                     </Link>
-                    <p className="mt-2 text-sm text-muted-foreground">Suivi de colis simple, rapide et fiable pour tous vos besoins.</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Votre partenaire de confiance pour le transport et le suivi de colis.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-8 text-sm">
                     <div>
                         <h4 className="font-semibold text-foreground mb-2">Navigation</h4>
                         <ul className="space-y-2 text-muted-foreground">
-                            <li><Link href="#" className="hover:text-primary">Accueil</Link></li>
-                            <li><Link href="#features" className="hover:text-primary">Fonctionnalités</Link></li>
-                            <li><Link href="#testimonials" className="hover:text-primary">Témoignages</Link></li>
+                            <li><Link href="/" className="hover:text-primary">Accueil</Link></li>
+                            <li><Link href="/a-propos" className="hover:text-primary">À Propos</Link></li>
+                            <li><Link href="#features" className="hover:text-primary">Nos Services</Link></li>
                         </ul>
                     </div>
                      <div>
-                        <h4 className="font-semibold text-foreground mb-2">Légal</h4>
+                        <h4 className="font-semibold text-foreground mb-2">Support</h4>
                         <ul className="space-y-2 text-muted-foreground">
+                            <li><Link href="/contact" className="hover:text-primary">Contact</Link></li>
                             <li><Link href="#" className="hover:text-primary">Conditions d'utilisation</Link></li>
                             <li><Link href="#" className="hover:text-primary">Politique de confidentialité</Link></li>
-                             <li><Link href="#" className="hover:text-primary">Contact</Link></li>
                         </ul>
                     </div>
                 </div>
@@ -374,3 +375,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
