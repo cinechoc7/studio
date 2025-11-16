@@ -1,15 +1,16 @@
 
-'use server';
+'use client';
 
 import { PackageStatusTimeline } from "@/components/package-status-timeline";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Package as PackageIcon, MapPin, Calendar, CheckCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft, Package as PackageIcon, MapPin, Calendar, CheckCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { Package } from "@/lib/types";
-import { getPackageById } from "@/lib/data";
+import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { doc } from "firebase/firestore";
 
 
 type TrackingPageProps = {
@@ -17,9 +18,24 @@ type TrackingPageProps = {
 };
 
 
-export default async function TrackingPage({ params }: TrackingPageProps) {
+export default function TrackingPage({ params }: TrackingPageProps) {
   const packageId = params.id.toUpperCase();
-  const pkg: Package | undefined = await getPackageById(packageId);
+  const firestore = useFirestore();
+
+  const packageRef = useMemoFirebase(
+      () => (firestore && packageId ? doc(firestore, 'packages', packageId) : null),
+      [firestore, packageId]
+  );
+
+  const { data: pkg, isLoading } = useDoc<Package>(packageRef);
+
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen w-full flex-col items-center justify-center p-4 bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </main>
+    )
+  }
 
   if (!pkg) {
     return (
