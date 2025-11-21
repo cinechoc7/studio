@@ -113,8 +113,8 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
                      />
                     <CommandList>
                         <CommandEmpty>
-                            <Button variant="ghost" className="w-full justify-start" onClick={() => setOpen(false)}>
-                                Utiliser le statut: "{newStatus}"
+                            <Button variant="ghost" className="w-full justify-start p-2 h-auto" onClick={() => setOpen(false)}>
+                                Utiliser le statut : "{newStatus}"
                             </Button>
                         </CommandEmpty>
                         <CommandGroup>
@@ -123,14 +123,14 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
                                     key={status}
                                     value={status}
                                     onSelect={(currentValue) => {
-                                        setNewStatus(currentValue === newStatus ? "" : currentValue)
+                                        setNewStatus(currentValue === newStatus.toLowerCase() ? "" : status)
                                         setOpen(false)
                                     }}
                                 >
                                     <Check
                                         className={cn(
                                             "mr-2 h-4 w-4",
-                                            newStatus === status ? "opacity-100" : "opacity-0"
+                                            newStatus.toLowerCase() === status.toLowerCase() ? "opacity-100" : "opacity-0"
                                         )}
                                     />
                                     {status}
@@ -153,7 +153,7 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
         />
       </div>
       
-       <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/hover">
+       <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/90">
             {isPending ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : null}
             Mettre à jour
         </Button>
