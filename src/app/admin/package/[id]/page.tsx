@@ -24,7 +24,7 @@ type AdminPackagePageProps = {
 };
 
 export default function AdminPackagePage({ params }: AdminPackagePageProps) {
-  const packageId = params.id;
+  const { id: packageId } = params;
   const firestore = useFirestore();
 
   const packageRef = useMemoFirebase(
