@@ -266,6 +266,19 @@ export default function Home() {
                         </div>
                     </div>
                 </section>
+                
+                {/* Stats Section */}
+                <section className="py-16 md:py-24 bg-background">
+                    <div className="container px-4 mx-auto md:px-6">
+                        <h2 className="text-3xl font-bold text-center text-foreground mb-12">Colimove en chiffres</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            <StatCard icon={<Package />} value="1M+" label="Colis livrés" />
+                            <StatCard icon={<Users />} value="10k+" label="Clients satisfaits" />
+                            <StatCard icon={<Globe />} value="50+" label="Pays desservis" />
+                            <StatCard icon={<ShieldCheck />} value="99.9%" label="Taux de livraison à temps" />
+                        </div>
+                    </div>
+                </section>
 
                 {/* Features Section */}
                 <section id="features" className="py-16 bg-secondary/20 md:py-24">
@@ -292,19 +305,6 @@ export default function Home() {
                                 title="Fiabilité & Sécurité"
                                 description="Chaque colis est traité avec le plus grand soin pour garantir une livraison en parfait état."
                             />
-                        </div>
-                    </div>
-                </section>
-
-                {/* Stats Section */}
-                <section className="py-16 md:py-24 bg-background">
-                    <div className="container px-4 mx-auto md:px-6">
-                        <h2 className="text-3xl font-bold text-center text-foreground mb-12">Colimove en chiffres</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                            <StatCard icon={<Package />} value="1M+" label="Colis livrés" />
-                            <StatCard icon={<Users />} value="10k+" label="Clients satisfaits" />
-                            <StatCard icon={<Globe />} value="50+" label="Pays desservis" />
-                            <StatCard icon={<ShieldCheck />} value="99.9%" label="Taux de livraison à temps" />
                         </div>
                     </div>
                 </section>
@@ -421,3 +421,4 @@ export default function Home() {
     );
 
     
+
