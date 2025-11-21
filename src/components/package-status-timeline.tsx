@@ -6,7 +6,7 @@ import type { StatusHistory, PackageStatus } from "@/lib/types";
 import { Package, Truck, Warehouse, CheckCircle2, XCircle, Clock, Home, Building } from "lucide-react";
 import React from "react";
 
-const statusIcons: { [key in PackageStatus]: React.ElementType } = {
+const statusIcons: { [key in PackageStatus]?: React.ElementType } = {
     'Pris en charge': Package,
     'En cours d\'acheminement': Truck,
     'Bloqué au dédouanement': XCircle,
