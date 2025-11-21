@@ -296,8 +296,21 @@ export default function Home() {
                     </div>
                 </section>
 
+                {/* Stats Section */}
+                <section className="py-16 md:py-24 bg-background">
+                    <div className="container px-4 mx-auto md:px-6">
+                        <h2 className="text-3xl font-bold text-center text-foreground mb-12">Colimove en chiffres</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            <StatCard icon={<Package />} value="1M+" label="Colis livrés" />
+                            <StatCard icon={<Users />} value="10k+" label="Clients satisfaits" />
+                            <StatCard icon={<Globe />} value="50+" label="Pays desservis" />
+                            <StatCard icon={<ShieldCheck />} value="99.9%" label="Taux de livraison à temps" />
+                        </div>
+                    </div>
+                </section>
+
                 {/* How it works Section */}
-                <section id="how-it-works" className="py-16 bg-background md:py-24">
+                <section id="how-it-works" className="py-16 bg-secondary/20 md:py-24">
                     <div className="container px-4 mx-auto md:px-6">
                         <h2 className="mb-4 text-3xl font-bold text-center text-foreground md:text-4xl">
                             Expédier et suivre, un jeu d'enfant
@@ -341,7 +354,7 @@ export default function Home() {
                 </section>
 
                 {/* Testimonials Section */}
-                <section id="testimonials" className="py-16 bg-secondary/20 md:py-24">
+                <section id="testimonials" className="py-16 bg-background md:py-24">
                     <div className="container px-4 mx-auto md:px-6">
                         <h2 className="mb-16 text-3xl font-bold text-center text-foreground md:text-4xl">
                             Ce que nos clients disent de nous
@@ -365,18 +378,6 @@ export default function Home() {
                             <CarouselPrevious className="absolute left-[-50px] top-1/2 -translate-y-1/2 fill-black" />
                             <CarouselNext className="absolute right-[-50px] top-1/2 -translate-y-1/2 fill-black" />
                         </Carousel>
-                    </div>
-                </section>
-
-                <section className="py-16 md:py-24 bg-background">
-                    <div className="container px-4 mx-auto md:px-6">
-                        <h2 className="text-3xl font-bold text-center text-foreground mb-12">Colimove en chiffres</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                            <StatCard icon={<Package />} value="1M+" label="Colis livrés" />
-                            <StatCard icon={<Users />} value="10k+" label="Clients satisfaits" />
-                            <StatCard icon={<Globe />} value="50+" label="Pays desservis" />
-                            <StatCard icon={<ShieldCheck />} value="99.9%" label="Taux de livraison à temps" />
-                        </div>
                     </div>
                 </section>
 
