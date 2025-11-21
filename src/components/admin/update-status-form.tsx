@@ -1,9 +1,9 @@
+
 "use client";
 
 import { revalidatePackagePaths } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { PackageStatus, packageStatuses, StatusHistory } from "@/lib/types";
 import { useState, useRef } from "react";
@@ -11,6 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useFirestore } from "@/firebase";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type UpdateStatusFormProps = {
   packageId: string;
@@ -23,6 +27,8 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
   const firestore = useFirestore();
   const [isPending, setIsPending] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const [open, setOpen] = useState(false)
+  const [newStatus, setNewStatus] = useState<PackageStatus | string>("")
   
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,7 +39,7 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
 
     setIsPending(true);
     const formData = new FormData(event.currentTarget);
-    const status = formData.get('status') as PackageStatus;
+    const status = newStatus;
     const location = formData.get('location') as string;
 
     if (!status || !location) {
@@ -56,7 +62,6 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
             statusHistory: arrayUnion(newStatusEntry)
         });
         
-        // Revalidate public pages
         await revalidatePackagePaths(packageId);
 
         toast({
@@ -64,8 +69,8 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
             description: `Statut du colis mis à jour en "${status}".`,
         });
 
-        // Reset form fields after successful submission
         formRef.current?.reset();
+        setNewStatus("");
 
     } catch (error: any) {
         console.error("Error updating package status:", error);
@@ -79,28 +84,63 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
     }
   }
 
-
-  // Filter out the current status from the list of options
-  const availableStatuses = packageStatuses.filter(status => status !== currentStatus);
-
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       <input type="hidden" name="packageId" value={packageId} />
       
       <div className="space-y-2">
         <Label htmlFor="status">Nouveau statut</Label>
-        <Select name="status" defaultValue={availableStatuses.length > 0 ? availableStatuses[0] : undefined}>
-          <SelectTrigger id="status">
-            <SelectValue placeholder="Sélectionner un statut" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableStatuses.map((status) => (
-              <SelectItem key={status} value={status}>
-                {status}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                 <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between"
+                >
+                    {newStatus
+                        ? newStatus
+                        : "Sélectionner ou saisir un statut..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                    <CommandInput 
+                        placeholder="Rechercher ou créer un statut..." 
+                        onValueChange={(value) => setNewStatus(value)}
+                        value={newStatus}
+                     />
+                    <CommandList>
+                        <CommandEmpty>
+                            <Button variant="ghost" className="w-full justify-start" onClick={() => setOpen(false)}>
+                                Utiliser le statut: "{newStatus}"
+                            </Button>
+                        </CommandEmpty>
+                        <CommandGroup>
+                            {packageStatuses.map((status) => (
+                                <CommandItem
+                                    key={status}
+                                    value={status}
+                                    onSelect={(currentValue) => {
+                                        setNewStatus(currentValue === newStatus ? "" : currentValue)
+                                        setOpen(false)
+                                    }}
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4",
+                                            newStatus === status ? "opacity-100" : "opacity-0"
+                                        )}
+                                    />
+                                    {status}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
       </div>
 
       <div className="space-y-2">

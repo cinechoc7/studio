@@ -1,11 +1,12 @@
+
 "use client";
 
 import { cn, formatDate } from "@/lib/utils";
-import type { StatusHistory } from "@/lib/types";
+import type { StatusHistory, PackageStatus } from "@/lib/types";
 import { Package, Truck, Warehouse, CheckCircle2, XCircle, Clock, Home, Building } from "lucide-react";
 import React from "react";
 
-const statusIcons: { [key: string]: React.ElementType } = {
+const statusIcons: { [key in PackageStatus]: React.ElementType } = {
     'Pris en charge': Package,
     'En cours d\'acheminement': Truck,
     'Bloqué au dédouanement': XCircle,
@@ -18,15 +19,14 @@ const statusIcons: { [key: string]: React.ElementType } = {
 
 
 export function PackageStatusTimeline({ history }: PackageStatusTimelineProps) {
-  // The history is now pre-sorted from the data source
-  const sortedHistory = history;
+  const sortedHistory = [...history].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   return (
     <div className="relative pl-4">
       <div className="absolute left-5 top-0 h-full w-0.5 bg-border/80 -translate-x-1/2" aria-hidden="true" />
       <ul className="space-y-8">
         {sortedHistory.map((item, index) => {
-          const Icon = statusIcons[item.status] || Package;
+          const Icon = statusIcons[item.status as PackageStatus] || Package;
           const isFirst = index === 0;
 
           return (

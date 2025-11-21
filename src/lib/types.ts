@@ -15,7 +15,7 @@ export const packageStatuses = [
 export type PackageStatus = (typeof packageStatuses)[number];
 
 export type StatusHistory = {
-  status: PackageStatus;
+  status: PackageStatus | string;
   location: string;
   timestamp: string; // Using ISO string for consistency between Firestore and JSON
 };
@@ -34,7 +34,7 @@ export type Package = {
   recipient: ContactInfo;
   origin: string;
   destination: string;
-  currentStatus: PackageStatus;
+  currentStatus: PackageStatus | string;
   statusHistory: StatusHistory[];
   createdAt: string; // Using ISO string for consistency
 };
