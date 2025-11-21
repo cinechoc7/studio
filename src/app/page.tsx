@@ -4,7 +4,7 @@
 import { TrackingForm } from '@/components/tracking-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, ShieldCheck, Zap, Package, ArrowRight, Star, Plus, Map, Bell, Truck, Menu } from 'lucide-react';
+import { Search, ShieldCheck, Zap, Package, ArrowRight, Star, Plus, Map, Bell, Truck, Menu, Users, Globe } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -54,6 +54,17 @@ function TestimonialCard({ name, avatar, text, rating }: { name: string, avatar:
         </Card>
     );
 }
+
+const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string, label: string }) => (
+    <div className="p-6 text-center bg-card rounded-xl shadow-lg border-border/20">
+        <div className="mb-3 text-primary flex items-center justify-center h-12 w-12 mx-auto rounded-full bg-gradient-to-br from-primary/20 to-secondary">
+            {icon}
+        </div>
+        <p className="text-3xl font-extrabold text-foreground">{value}</p>
+        <p className="text-muted-foreground">{label}</p>
+    </div>
+);
+
 
 const testimonials = [
     {
@@ -357,6 +368,18 @@ export default function Home() {
                     </div>
                 </section>
 
+                <section className="py-16 md:py-24 bg-background">
+                    <div className="container px-4 mx-auto md:px-6">
+                        <h2 className="text-3xl font-bold text-center text-foreground mb-12">Colimove en chiffres</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            <StatCard icon={<Package />} value="1M+" label="Colis livrés" />
+                            <StatCard icon={<Users />} value="10k+" label="Clients satisfaits" />
+                            <StatCard icon={<Globe />} value="50+" label="Pays desservis" />
+                            <StatCard icon={<ShieldCheck />} value="99.9%" label="Taux de livraison à temps" />
+                        </div>
+                    </div>
+                </section>
+
             </main>
 
             <footer className="w-full px-4 py-8 border-t bg-card md:px-6">
@@ -395,4 +418,5 @@ export default function Home() {
             </footer>
         </div>
     );
-}
+
+    
