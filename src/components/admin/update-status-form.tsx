@@ -123,7 +123,7 @@ export function UpdateStatusForm({ packageId, currentStatus }: UpdateStatusFormP
                                     key={status}
                                     value={status}
                                     onSelect={(currentValue) => {
-                                        setNewStatus(currentValue === newStatus.toLowerCase() ? "" : status)
+                                        setNewStatus(currentValue.toLowerCase() === newStatus.toLowerCase() ? "" : status)
                                         setOpen(false)
                                     }}
                                 >
