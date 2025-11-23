@@ -111,7 +111,7 @@ export default function ContactPage() {
                                         <Phone className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                                         <div>
                                             <h3 className="font-semibold">Téléphone</h3>
-                                            <p className="text-muted-foreground">+33 1 23 45 67 89</p>
+                                            <p className="text-muted-foreground">Bientôt disponible</p>
                                         </div>
                                     </div>
                                 </div>
